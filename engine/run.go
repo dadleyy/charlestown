@@ -1,30 +1,46 @@
 package engine
 
-import "github.com/gdamore/tcell"
-import "github.com/gdamore/tcell/encoding"
+import "os"
+import "io"
+import "log"
+import "path/filepath"
 
-// Run creates and loops the game engine.
+// Run creates and loops the game engine, mostly used to prepare the logger.
 func Run(config Configuration) error {
-	logger, e := initializeLogger(config)
+	wd, e := os.Getwd()
 
 	if e != nil {
 		return e
 	}
 
-	defer logger.Close()
+	logdir := filepath.Dir(config.Logging.Filename)
 
-	logger.Printf("[init] starting tcell")
+	if !filepath.IsAbs(logdir) {
+		logdir = filepath.Join(wd, logdir)
+	}
 
-	encoding.Register()
+	if e := os.MkdirAll(logdir, os.ModePerm); e != nil {
+		return e
+	}
 
-	screen, e := tcell.NewScreen()
+	flags := os.O_RDWR | os.O_CREATE
+
+	if config.Logging.Truncate {
+		flags = flags | os.O_TRUNC
+	} else {
+		flags = flags | os.O_APPEND
+	}
+
+	logfile := filepath.Join(logdir, filepath.Base(config.Logging.Filename))
+	writer, e := os.OpenFile(logfile, flags, os.ModePerm)
 
 	if e != nil {
 		return e
 	}
 
-	logger.Printf("[init] tcell started, entering game loop")
+	defer writer.Close()
 
-	instance := engine{logger, screen, config}
-	return instance.run()
+	logger := log.New(io.MultiWriter(writer), "[ch] ", log.Ldate|log.Lshortfile|log.Ltime|log.LUTC)
+	instance := engine{Logger: logger, config: config}
+	return instance.run(gameState{})
 }

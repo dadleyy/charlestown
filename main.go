@@ -12,8 +12,6 @@ func main() {
 	godotenv.Load()
 	config := engine.Configuration{}
 
-	log.SetFlags(log.Lshortfile | log.LUTC | log.Ldate | log.Ltime)
-
 	flag.StringVar(&config.Logging.Filename, "logfile", "log/charlestown.log", "decide where the logs go")
 	flag.BoolVar(&config.Logging.Truncate, "truncate-log", true, "truncate the log file when opening")
 	flag.Parse()

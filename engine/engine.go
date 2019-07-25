@@ -1,80 +1,74 @@
 package engine
 
+import "os"
 import "fmt"
+import "log"
 import "time"
-import "unicode/utf8"
+import "sync"
+import "syscall"
+import "os/signal"
 import "github.com/gdamore/tcell"
+import "github.com/gdamore/tcell/encoding"
 
 type engine struct {
-	*engineLogger
-	screen tcell.Screen
+	*log.Logger
 	config Configuration
 }
 
-func (instance *engine) pollKeys(quit chan<- struct{}) {
-	instance.Printf("polling screen keyboard")
+func (instance *engine) run(state gameState) error {
+	instance.Printf("initializing encoding")
+	encoding.Register()
+	screen, e := tcell.NewScreen()
 
-	for {
-		event := instance.screen.PollEvent()
-
-		switch kind := event.(type) {
-
-		case *tcell.EventKey:
-			instance.Printf("received keyboard event")
-
-			switch kind.Key() {
-			case tcell.KeyEscape, tcell.KeyCtrlC:
-				instance.Printf("escape key pressed")
-				quit <- struct{}{}
-				return
-			}
-		}
-	}
-}
-
-func (instance *engine) run() error {
-	instance.Printf("starting screen")
-	quit := make(chan struct{})
-
-	if e := instance.screen.Init(); e != nil {
+	if e != nil {
 		return e
 	}
 
-	defer instance.screen.Fini()
+	kills := make(chan os.Signal, 1)
+	signal.Notify(kills, syscall.SIGINT, syscall.SIGSTOP, syscall.SIGTERM)
 
-	go instance.pollKeys(quit)
+	quit := make(chan error)
+	redraw := make(chan gameState)
+	wg := &sync.WaitGroup{}
+	timer := time.Tick(time.Millisecond * 500)
 
-	messages := make(chan string, 6)
+	instance.Printf("initializing screen")
+	if e := screen.Init(); e != nil {
+		return e
+	}
 
-	go func() {
-		<-time.After(time.Second)
-		instance.Printf("sending message")
-		messages <- "this is a test message"
-		<-time.After(time.Second)
-		close(messages)
-	}()
+	instance.Printf("starting keyboard reactor")
+	keyboard := keyboardReactor{
+		Logger:  instance.Logger,
+		quit:    quit,
+		updates: redraw,
+		wait:    wg,
+	}
 
-	for {
+	go keyboard.poll(screen)
+
+	var exit error
+
+	for exit == nil {
 		select {
-		case message, ok := <-messages:
-			instance.Printf("recieved message '%s'", message)
-
-			if !ok || len(message) == 0 {
-				instance.Printf("messages is now closed, exiting")
-				return nil
-			}
-
-			instance.screen.Clear()
-
-			character, size := utf8.DecodeRuneInString(message)
-			instance.Printf("filling screen with '%v' (size %d)", character, size)
-			instance.screen.Fill(character, tcell.StyleDefault)
-			instance.screen.Show()
-		case <-quit:
-			instance.Printf("quit signal recieved")
-			return fmt.Errorf("exit")
+		case e := <-quit:
+			exit = e
+		case update := <-redraw:
+			state = update
+			instance.Printf("redrawing game with state %v", state)
+		case <-timer:
+			instance.Printf("applying update")
+		case <-kills:
+			instance.Printf("received shutdown signal, terminating")
+			exit = fmt.Errorf("interrupted")
 		}
 	}
 
-	return nil
+	instance.Printf("game loop terminated, clearing screen and closing buffers")
+	screen.Clear()
+	screen.Fini()
+	instance.Printf("waiting for loop reactors")
+	wg.Wait()
+	instance.Printf("terminating")
+	return exit
 }
