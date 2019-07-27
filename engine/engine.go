@@ -15,6 +15,31 @@ type engine struct {
 	config Configuration
 }
 
+func (instance *engine) draw(screen tcell.Screen, state gameState) error {
+	screen.Clear()
+
+	if state.dimensions.height < 1 || state.dimensions.width < 1 {
+		instance.Printf("skipping to draw - no dimensions")
+		return nil
+	}
+
+	instance.Printf("setting cursor (%d, %d)", state.cursor.x, state.cursor.y)
+
+	cursorRune := 'X'
+
+	switch state.cursor.kind {
+	case cursorDefault:
+		cursorRune = 'X'
+	case cursorBuild:
+		cursorRune = 'O'
+	}
+
+	screen.SetContent(state.cursor.x, state.cursor.y, cursorRune, []rune{}, tcell.StyleDefault)
+
+	screen.Show()
+	return nil
+}
+
 func (instance *engine) run(state gameState) error {
 	instance.Printf("initializing encoding")
 	encoding.Register()
@@ -28,7 +53,7 @@ func (instance *engine) run(state gameState) error {
 	signal.Notify(kills, syscall.SIGINT, syscall.SIGSTOP, syscall.SIGTERM)
 
 	quit := make(chan error)
-	redraw := make(chan gameState)
+	redraw := make(chan mutation)
 	wg := &sync.WaitGroup{}
 	timer := time.Tick(time.Millisecond * 500)
 
@@ -50,11 +75,13 @@ func (instance *engine) run(state gameState) error {
 	var exit error
 
 	for exit == nil {
+		instance.draw(screen, state)
+
 		select {
 		case e := <-quit:
 			exit = e
 		case update := <-redraw:
-			state = update
+			state = update(state)
 			instance.Printf("redrawing game with state %v", state)
 		case <-timer:
 			instance.Printf("applying update")
