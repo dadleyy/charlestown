@@ -79,14 +79,12 @@ func (instance *engine) run(state gameState) error {
 	}
 
 	instance.Printf("starting keyboard reactor")
-	keyboard := keyboardReactor{
-		Logger:  instance.Logger,
-		quit:    quit,
-		updates: redraw,
-		wait:    wg,
+	multiplex := eventDispatcher{
+		&keyboardReactor{instance.Logger, quit, redraw},
+		&viewportReactor{instance.Logger, quit, redraw},
 	}
 
-	go keyboard.poll(screen)
+	go multiplex.poll(screen, wg, instance.Logger)
 
 	var exit error
 

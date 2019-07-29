@@ -2,66 +2,60 @@ package engine
 
 import "fmt"
 import "log"
-import "sync"
 import "github.com/gdamore/tcell"
+
+const (
+	keyToggleBuild = 'b'
+	keyUp          = 'w'
+	keyDown        = 's'
+	keyLeft        = 'a'
+	keyRight       = 'd'
+)
 
 type keyboardReactor struct {
 	*log.Logger
 	quit    chan<- error
 	updates chan<- mutation
-	wait    *sync.WaitGroup
 }
 
-func (keyboard *keyboardReactor) poll(source eventSource) {
-	keyboard.wait.Add(1)
-	defer keyboard.wait.Done()
-	keyboard.Printf("starting keyboard reactor loop")
+func (keyboard *keyboardReactor) HandleEvent(event tcell.Event) bool {
+	switch event := event.(type) {
+	case *tcell.EventKey:
+		keyboard.Printf("received keyboard event")
 
-	event := source.PollEvent()
-
-	for event != nil {
-		switch event := event.(type) {
-		case *tcell.EventKey:
-			keyboard.Printf("received keyboard event")
-
-			switch event.Key() {
-			case tcell.KeyCtrlC, tcell.KeyEscape:
-				keyboard.Printf("exiting by user command")
-				keyboard.quit <- fmt.Errorf("user")
-				return
-			case tcell.KeyRune:
-				switch event.Rune() {
-				case 'b':
-					keyboard.Printf("toggling build")
-					keyboard.updates <- cursorChange(cursorBuild)
-				case 'w':
-					keyboard.Printf("moving up")
-					keyboard.updates <- move(0, -1)
-				case 'a':
-					keyboard.Printf("moving lest")
-					keyboard.updates <- move(-1, 0)
-				case 's':
-					keyboard.Printf("moving down")
-					keyboard.updates <- move(0, 1)
-				case 'd':
-					keyboard.Printf("moving right")
-					keyboard.updates <- move(1, 0)
-				default:
-					keyboard.Printf("character key pressed: '%c'", event.Rune())
-				}
+		switch event.Key() {
+		case tcell.KeyCtrlC, tcell.KeyEscape:
+			keyboard.Printf("exiting by user command")
+			keyboard.quit <- fmt.Errorf("user")
+			return false
+		case tcell.KeyUp:
+			keyboard.updates <- move(0, -1)
+		case tcell.KeyDown:
+			keyboard.updates <- move(0, 1)
+		case tcell.KeyLeft:
+			keyboard.updates <- move(-1, 0)
+		case tcell.KeyRight:
+			keyboard.updates <- move(1, 0)
+		case tcell.KeyRune:
+			switch event.Rune() {
+			case keyToggleBuild:
+				keyboard.updates <- cursorChange(cursorBuild)
+			case keyUp:
+				keyboard.updates <- move(0, -1)
+			case keyLeft:
+				keyboard.updates <- move(-1, 0)
+			case keyDown:
+				keyboard.updates <- move(0, 1)
+			case keyRight:
+				keyboard.updates <- move(1, 0)
 			default:
-				keyboard.Printf("unknown keyboard character '%c' (%v)", event.Rune(), event.Key())
+				keyboard.Printf("character key pressed: '%c'", event.Rune())
 			}
-		case *tcell.EventResize:
-			width, height := event.Size()
-			keyboard.Printf("resize event, new dimensions (%d, %d)", width, height)
-			keyboard.updates <- resize(width, height)
 		default:
-			keyboard.Printf("received unknown event, polling next")
+			keyboard.Printf("unknown keyboard character '%c' (%v)", event.Rune(), event.Key())
 		}
-
-		event = source.PollEvent()
+	default:
+		keyboard.Printf("received unknown event, polling next")
 	}
-
-	keyboard.Printf("keyboard reactor poll complete")
+	return true
 }
