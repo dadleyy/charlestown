@@ -40,6 +40,14 @@ func move(x int, y int) mutation {
 			loc.x = state.world.width - 1
 		}
 
+		if loc.y < 0 {
+			loc.y = 0
+		}
+
+		if loc.x < 0 {
+			loc.x = 0
+		}
+
 		next.cursor.location = loc
 		return next
 	}

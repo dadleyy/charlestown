@@ -1,6 +1,7 @@
 NAME=charlestown
 EXE=./dist/charlestown/bin/$(NAME)
 VENDOR_MANIFEST=./vendor/modules.txt
+VENDOR_FLAGS=-v
 SRC=$(shell git ls-files '*.go')
 GO=go
 RM=rm -rf
@@ -15,18 +16,17 @@ TEST_FLAGS=-v -count=1 -cover -covermode=set -benchmem -coverprofile=$(COVERPROF
 all: $(EXE)
 
 clean:
-	$(RM) $(basename $(EXE))
-	$(RM) ./vendor
-	$(RM) $(basename $(COVERPROFILE))
-
-go.sum: go.mod
-	$(GO) mod tidy
-	$(GO) mod vendor
+	$(RM) $(dir $(EXE))
+	$(RM) $(dir $(VENDOR_MANIFEST))
+	$(RM) $(dir $(COVERPROFILE))
 
 $(VENDOR_MANIFEST): go.mod go.sum
-	$(GO) mod vendor
+	echo "[charlestown] building vendor dir"
+	$(GO) mod tidy
+	$(GO) mod vendor $(VENDOR_FLAGS)
 
 lint: $(SRC)
+	echo "[charlestown] linting"
 	$(GO) get -v -u golang.org/x/lint/golint
 	$(GO) get -v -u github.com/fzipp/gocyclo
 	$(GO) get -v -u github.com/client9/misspell/cmd/misspell
@@ -42,4 +42,5 @@ test: $(SRC)
 	$(GO) test $(TEST_FLAGS) ./...
 
 $(EXE): $(SRC) $(VENDOR_MANIFEST)
+	echo "[charlestown] building"
 	$(GO) build -o $(EXE) $(BUILD_FLAGS)
