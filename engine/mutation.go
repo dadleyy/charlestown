@@ -9,18 +9,17 @@ func dup(state gameState) gameState {
 			height: state.dimensions.height,
 		},
 		cursor: cursor{
-			x:    state.cursor.x,
-			y:    state.cursor.y,
-			kind: state.cursor.kind,
+			location: point{x: state.cursor.location.x, y: state.cursor.location.y},
+			kind:     state.cursor.kind,
 		},
 	}
 }
 
 func move(x int, y int) mutation {
 	return func(state gameState) gameState {
-		loc := cursor{x: state.cursor.x + x, y: state.cursor.y + y}
+		loc := point{x: state.cursor.location.x + x, y: state.cursor.location.y + y}
 		next := dup(state)
-		next.cursor = loc
+		next.cursor.location = loc
 		return next
 	}
 }

@@ -23,18 +23,12 @@ func (instance *engine) draw(screen tcell.Screen, state gameState) error {
 		return nil
 	}
 
-	instance.Printf("setting cursor (%d, %d)", state.cursor.x, state.cursor.y)
+	instance.Printf("setting cursor %s", state.cursor.location)
 
-	cursorRune := 'X'
+	midX := state.dimensions.width / 2
+	midY := state.dimensions.height / 2
 
-	switch state.cursor.kind {
-	case cursorDefault:
-		cursorRune = 'X'
-	case cursorBuild:
-		cursorRune = 'O'
-	}
-
-	screen.SetContent(state.cursor.x, state.cursor.y, cursorRune, []rune{}, tcell.StyleDefault)
+	screen.SetContent(midX, midY, state.cursor.char(), []rune{}, tcell.StyleDefault)
 
 	screen.Show()
 	return nil
