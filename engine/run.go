@@ -51,7 +51,7 @@ func Run(config Configuration) error {
 		renderers: []renderer{
 			&boundaryRenderer{logger},
 			&cursorRenderer{logger},
-			&uiRenderer{logger},
+			&uiRenderer{logger, true},
 		},
 	}
 

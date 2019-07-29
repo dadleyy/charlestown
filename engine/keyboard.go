@@ -36,10 +36,10 @@ func (keyboard *keyboardReactor) HandleEvent(event tcell.Event) bool {
 			keyboard.updates <- move(-1, 0)
 		case tcell.KeyRight:
 			keyboard.updates <- move(1, 0)
+		case tcell.KeyTab:
+			keyboard.updates <- mode()
 		case tcell.KeyRune:
 			switch event.Rune() {
-			case keyToggleBuild:
-				keyboard.updates <- cursorChange(cursorBuild)
 			case keyUp:
 				keyboard.updates <- move(0, -1)
 			case keyLeft:

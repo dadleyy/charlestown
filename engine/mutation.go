@@ -54,15 +54,15 @@ func move(x int, y int) mutation {
 	}
 }
 
-func cursorChange(mode int) mutation {
+func mode() mutation {
 	return func(state gameState) gameState {
 		next := dup(state)
-
-		if next.cursor.mode == mode {
-			mode = cursorNormal
+		switch state.cursor.mode {
+		case cursorNormal:
+			next.cursor.mode = cursorBuild
+		default:
+			next.cursor.mode = cursorNormal
 		}
-
-		next.cursor.mode = mode
 		return next
 	}
 }

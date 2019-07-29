@@ -8,7 +8,6 @@ type boundaryRenderer struct {
 
 func (renderer boundaryRenderer) generate(state gameState) []renderable {
 	bounding := box(state.world.width, state.world.height)
-	midx := state.dimensions.width / 2
-	midy := state.dimensions.height / 2
+	midx, midy := state.dimensions.midway()
 	return translate(bounding, point{midx - state.cursor.location.x, midy - state.cursor.location.y})
 }
