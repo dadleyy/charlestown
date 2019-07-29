@@ -30,6 +30,28 @@ func (instance *engine) draw(screen tcell.Screen, state gameState) error {
 
 	screen.SetContent(midX, midY, state.cursor.char(), []rune{}, tcell.StyleDefault)
 
+	left := midX - state.cursor.location.x
+	right := left + state.world.width
+	top := midY - state.cursor.location.y
+	bottom := top + state.world.height
+
+	for i := 1; i < state.world.width; i++ {
+		col := i + left
+		screen.SetContent(col, top, symbolWallHorizontal, []rune{}, tcell.StyleDefault)
+		screen.SetContent(col, bottom, symbolWallHorizontal, []rune{}, tcell.StyleDefault)
+	}
+
+	for i := 1; i < state.world.height; i++ {
+		row := i + top
+		screen.SetContent(left, row, symbolWallVertical, []rune{}, tcell.StyleDefault)
+		screen.SetContent(right, row, symbolWallVertical, []rune{}, tcell.StyleDefault)
+	}
+
+	screen.SetContent(left, top, symbolWallTopLeft, []rune{}, tcell.StyleDefault)
+	screen.SetContent(right, top, symbolWallTopRight, []rune{}, tcell.StyleDefault)
+	screen.SetContent(left, bottom, symbolWallBottomLeft, []rune{}, tcell.StyleDefault)
+	screen.SetContent(right, bottom, symbolWallBottomRight, []rune{}, tcell.StyleDefault)
+
 	screen.Show()
 	return nil
 }

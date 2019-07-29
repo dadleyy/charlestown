@@ -42,5 +42,9 @@ func Run(config Configuration) error {
 
 	logger := log.New(io.MultiWriter(writer), "[ch] ", log.Ldate|log.Lshortfile|log.Ltime|log.LUTC)
 	instance := engine{Logger: logger, config: config}
-	return instance.run(gameState{})
+	state := gameState{
+		world:  dimensions{120, 40},
+		cursor: cursor{location: point{10, 10}},
+	}
+	return instance.run(state)
 }
