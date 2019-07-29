@@ -4,6 +4,7 @@ type mutation = func(state gameState) gameState
 
 func dup(state gameState) gameState {
 	return gameState{
+		buildings: state.buildings[0:],
 		world: dimensions{
 			width:  state.world.width,
 			height: state.world.height,
@@ -14,7 +15,7 @@ func dup(state gameState) gameState {
 		},
 		cursor: cursor{
 			location: point{x: state.cursor.location.x, y: state.cursor.location.y},
-			kind:     state.cursor.kind,
+			mode:     state.cursor.mode,
 		},
 	}
 }
@@ -53,15 +54,15 @@ func move(x int, y int) mutation {
 	}
 }
 
-func cursorChange(kind int) mutation {
+func cursorChange(mode int) mutation {
 	return func(state gameState) gameState {
 		next := dup(state)
 
-		if next.cursor.kind == kind {
-			kind = cursorDefault
+		if next.cursor.mode == mode {
+			mode = cursorNormal
 		}
 
-		next.cursor.kind = kind
+		next.cursor.mode = mode
 		return next
 	}
 }

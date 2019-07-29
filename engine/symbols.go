@@ -7,6 +7,6 @@ const (
 	symbolWallTopRight    = '┐'
 	symbolWallBottomLeft  = '└'
 	symbolWallBottomRight = '┘'
-	symbolCursorNormal    = 'N'
-	symbolCursorBuild     = 'B'
+	symbolCursorNormal    = '⬩'
+	symbolCursorBuild     = '⌅'
 )

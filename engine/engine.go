@@ -12,7 +12,8 @@ import "github.com/gdamore/tcell/encoding"
 
 type engine struct {
 	*log.Logger
-	config Configuration
+	config    Configuration
+	renderers []renderer
 }
 
 func (instance *engine) draw(screen tcell.Screen, state gameState) error {
@@ -23,12 +24,29 @@ func (instance *engine) draw(screen tcell.Screen, state gameState) error {
 		return nil
 	}
 
+	renderables := make([]renderable, 0, state.world.width*state.world.height)
+
+	for _, renderer := range instance.renderers {
+		items := renderer.generate(state)
+		renderables = append(renderables, items...)
+	}
+
+	instance.Printf("rendering %d points", len(renderables))
+
+	for _, r := range renderables {
+		screen.SetContent(r.location.x, r.location.y, r.symbol, []rune{}, tcell.StyleDefault)
+	}
+
+	screen.Show()
+	return nil
+}
+
+/*
+
 	instance.Printf("setting cursor %s", state.cursor.location)
 
 	midX := state.dimensions.width / 2
 	midY := state.dimensions.height / 2
-
-	screen.SetContent(midX, midY, state.cursor.char(), []rune{}, tcell.StyleDefault)
 
 	left := midX - state.cursor.location.x
 	right := left + state.world.width
@@ -55,6 +73,7 @@ func (instance *engine) draw(screen tcell.Screen, state gameState) error {
 	screen.Show()
 	return nil
 }
+*/
 
 func (instance *engine) run(state gameState) error {
 	instance.Printf("initializing encoding")

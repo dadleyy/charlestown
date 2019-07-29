@@ -41,10 +41,19 @@ func Run(config Configuration) error {
 	defer writer.Close()
 
 	logger := log.New(io.MultiWriter(writer), "[ch] ", log.Ldate|log.Lshortfile|log.Ltime|log.LUTC)
-	instance := engine{Logger: logger, config: config}
-	state := gameState{
-		world:  dimensions{120, 40},
-		cursor: cursor{location: point{10, 10}},
+	world := dimensions{120, 40}
+	cursor := cursor{location: point{world.width / 2, world.height / 2}}
+	state := gameState{world: world, cursor: cursor}
+
+	instance := engine{
+		Logger: logger,
+		config: config,
+		renderers: []renderer{
+			&boundaryRenderer{logger},
+			&cursorRenderer{logger},
+			&uiRenderer{logger},
+		},
 	}
+
 	return instance.run(state)
 }

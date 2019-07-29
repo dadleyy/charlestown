@@ -1,17 +1,17 @@
 package engine
 
 const (
-	cursorDefault = iota
+	cursorNormal = iota
 	cursorBuild
 )
 
 type cursor struct {
 	location point
-	kind     int
+	mode     int
 }
 
 func (c cursor) char() rune {
-	switch c.kind {
+	switch c.mode {
 	case cursorBuild:
 		return symbolCursorBuild
 	default:
