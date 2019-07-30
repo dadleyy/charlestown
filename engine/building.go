@@ -41,12 +41,12 @@ func (b *building) char() rune {
 func (b *building) cost() int {
 	switch b.kind {
 	case buildingBusiness:
-		return 10
+		return 10 * economyMultiplier
 	case buildingRoad:
-		return 2
+		return 2 * economyMultiplier
 	case buildingPark:
-		return 2
+		return 2 * economyMultiplier
 	default:
-		return 4
+		return 4 * economyMultiplier
 	}
 }

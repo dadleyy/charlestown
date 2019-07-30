@@ -33,8 +33,6 @@ func (instance *engine) draw(screen tcell.Screen, state gameState) error {
 	}
 
 	layered := instance.layerer.layer(renderables, state)
-	instance.Printf("rendering %d points", len(layered))
-
 	for _, r := range layered {
 		screen.SetContent(r.location.x, r.location.y, r.symbol, []rune{}, tcell.StyleDefault)
 	}
@@ -45,7 +43,7 @@ func (instance *engine) draw(screen tcell.Screen, state gameState) error {
 
 func (instance *engine) update(state gameState, dt time.Duration) gameState {
 	next := dup(state)
-	next.funds = next.funds + int(10.0*dt.Seconds())
+	next.funds = next.funds + int(5.0*economyMultiplier*dt.Seconds())
 	return next
 }
 
@@ -64,7 +62,7 @@ func (instance *engine) run(state gameState) error {
 	quit := make(chan error)
 	redraw := make(chan mutation)
 	wg := &sync.WaitGroup{}
-	timer := time.Tick(time.Millisecond * 500)
+	timer := time.Tick(time.Millisecond * 50)
 
 	instance.Printf("initializing screen")
 	if e := screen.Init(); e != nil {
@@ -94,9 +92,8 @@ func (instance *engine) run(state gameState) error {
 			exit = e
 		case update := <-redraw:
 			state = update(state)
-			instance.Printf("redrawing game with state %s", &state)
 		case <-timer:
-			instance.Printf("timer update")
+			instance.Printf("timer update, dt %f seconds", dt.Seconds()*1000)
 		case <-kills:
 			instance.Printf("received shutdown signal, terminating")
 			exit = fmt.Errorf("interrupted")

@@ -101,6 +101,10 @@ func interact() mutation {
 				kind:     state.cursor.building,
 			}
 
+			if next.funds < construct.cost() {
+				return next
+			}
+
 			next.funds -= construct.cost()
 			next.buildings = append(next.buildings, construct)
 		}
