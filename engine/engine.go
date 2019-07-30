@@ -83,7 +83,7 @@ func (instance *engine) run(state gameState) error {
 			exit = e
 		case update := <-redraw:
 			state = update(state)
-			instance.Printf("redrawing game with state %v", state)
+			instance.Printf("redrawing game with state %s", &state)
 		case <-timer:
 			instance.Printf("applying update")
 		case <-kills:

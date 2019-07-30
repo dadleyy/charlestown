@@ -13,9 +13,9 @@ func (renderer *buildingRenderer) generate(state gameState) []renderable {
 	cy := state.cursor.location.y
 
 	for _, p := range state.buildings {
-		projected := point{p.x + hx - cx, p.y + hy - cy}
+		projected := point{p.location.x + hx - cx, p.location.y + hy - cy}
 		renderer.Printf("[house] (original %s) @ %s", p, projected)
-		buildings = append(buildings, renderable{projected, symbolHouse})
+		buildings = append(buildings, renderable{projected, p.char()})
 	}
 
 	return buildings

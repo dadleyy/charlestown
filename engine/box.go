@@ -30,11 +30,12 @@ func box(width, height int, text ...string) []renderable {
 			if len(text) > y-1 && y > 0 {
 				message := text[y-1]
 
-				if len(message) > x-1 && x > 0 {
-					r, s := utf8.DecodeLastRune([]byte(message[x-1 : x]))
+				if x > 0 {
+					r, s := utf8.DecodeRuneInString(message)
 
 					if s > 0 {
 						symbol = r
+						text[y-1] = message[s:]
 					}
 				}
 			}

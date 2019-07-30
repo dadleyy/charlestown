@@ -16,6 +16,7 @@ func dup(state gameState) gameState {
 		cursor: cursor{
 			location: point{x: state.cursor.location.x, y: state.cursor.location.y},
 			mode:     state.cursor.mode,
+			building: state.cursor.building,
 		},
 	}
 }
@@ -75,10 +76,42 @@ func resize(width, height int) mutation {
 	}
 }
 
-func build(kind string) mutation {
+func intramode() mutation {
 	return func(state gameState) gameState {
 		next := dup(state)
-		next.buildings = append(next.buildings, state.cursor.location)
+
+		if next.cursor.mode == cursorBuild {
+			target := buildingHouse
+
+			switch next.cursor.building {
+			case buildingHouse:
+				target = buildingPark
+			case buildingPark:
+				target = buildingBusiness
+			case buildingBusiness:
+				target = buildingHouse
+			}
+
+			next.cursor.building = target
+		}
+
+		return next
+	}
+}
+
+func interact() mutation {
+	return func(state gameState) gameState {
+		next := dup(state)
+
+		if next.cursor.mode == cursorBuild {
+			construct := building{
+				location: state.cursor.location,
+				kind:     state.cursor.building,
+			}
+
+			next.buildings = append(next.buildings, construct)
+		}
+
 		return next
 	}
 }

@@ -8,6 +8,7 @@ const (
 type cursor struct {
 	location point
 	mode     int
+	building int
 }
 
 func (c cursor) char() rune {

@@ -10,7 +10,9 @@ const (
 	keyDown        = 's'
 	keyLeft        = 'a'
 	keyRight       = 'd'
-	keyInsertHouse = 'h'
+
+	horizontalMovementSpeed = 2
+	verticalMovementSpeed   = 1
 )
 
 type keyboardReactor struct {
@@ -27,36 +29,39 @@ func (keyboard *keyboardReactor) HandleEvent(event tcell.Event) bool {
 			keyboard.Printf("exiting by user command")
 			keyboard.quit <- fmt.Errorf("user")
 			return false
+		case tcell.KeyBacktab:
+			keyboard.updates <- intramode()
 		case tcell.KeyUp:
-			keyboard.updates <- move(0, -1)
+			keyboard.updates <- move(0, -verticalMovementSpeed)
 		case tcell.KeyDown:
-			keyboard.updates <- move(0, 1)
+			keyboard.updates <- move(0, verticalMovementSpeed)
 		case tcell.KeyLeft:
-			keyboard.updates <- move(-1, 0)
+			keyboard.updates <- move(-horizontalMovementSpeed, 0)
 		case tcell.KeyRight:
-			keyboard.updates <- move(1, 0)
+			keyboard.updates <- move(horizontalMovementSpeed, 0)
 		case tcell.KeyTab:
 			keyboard.updates <- mode()
+		case tcell.KeyEnter:
+			keyboard.updates <- interact()
 		case tcell.KeyRune:
 			switch event.Rune() {
-			case keyInsertHouse:
-				keyboard.updates <- build("house")
 			case keyUp:
-				keyboard.updates <- move(0, -1)
+				keyboard.updates <- move(0, -verticalMovementSpeed)
 			case keyLeft:
-				keyboard.updates <- move(-1, 0)
+				keyboard.updates <- move(-horizontalMovementSpeed, 0)
 			case keyDown:
-				keyboard.updates <- move(0, 1)
+				keyboard.updates <- move(0, verticalMovementSpeed)
 			case keyRight:
-				keyboard.updates <- move(1, 0)
+				keyboard.updates <- move(horizontalMovementSpeed, 0)
 			default:
 				keyboard.Printf("unknown character key pressed: '%c'", event.Rune())
 			}
 		default:
-			keyboard.Printf("unknown keyboard character '%c' (%v)", event.Rune(), event.Key())
+			keyboard.Printf("unknown keyboard character '%c' (%v): %s", event.Rune(), event.Key(), event.Name())
 		}
 	default:
 		keyboard.Printf("received unknown event, polling next")
 	}
+
 	return true
 }
