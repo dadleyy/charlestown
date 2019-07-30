@@ -1,0 +1,26 @@
+dist: trusty
+addons:
+  postgresql: "9.6"
+language: go
+services:
+  - postgresql
+go:
+  - "1.12"
+jobs:
+  include:
+    - stage: "build"
+      name: "build"
+      script: make
+    - name: "test"
+      script: make test
+    - name: "lint"
+      script: make lint
+    - stage: "deploy"
+      script: echo "todo"
+stages:
+  - "build"
+  - name: "deploy"
+    if: branch = master
+env:
+  global:
+    - GO111MODULE=on
