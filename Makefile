@@ -21,17 +21,20 @@ clean:
 	$(RM) $(dir $(COVERPROFILE))
 
 $(VENDOR_MANIFEST): go.mod go.sum
-	echo "[charlestown] building vendor dir"
+	@echo "[charlestown] building vendor dir"
 	$(GO) mod tidy
 	$(GO) mod vendor $(VENDOR_FLAGS)
 
 lint: $(SRC)
-	echo "[charlestown] linting"
-	$(GO) get -v -u golang.org/x/lint/golint
-	$(GO) get -v -u github.com/fzipp/gocyclo
-	$(GO) get -v -u github.com/client9/misspell/cmd/misspell
+	@echo "[charlestown] getting lint tools"
+	$(if $(shell which golint), @echo "  - golint found", $(GO) get golang.org/x/lint/golint)
+	$(if $(shell which gocyclo), @echo "  - gocyclo found", $(GO) get github.com/fzipp/gocyclo)
+	$(if $(shell which misspell), @echo "  - misspell found", $(GO) get github.com/client9/misspell/cmd/misspell)
+	@echo "[charlestown] running misspell"
 	misspell -error $(SRC)
+	@echo "[charlestown] running gocyclo"
 	gocyclo $(CYCLO_FLAGS) $(SRC)
+	@echo "[charlestown] running golint"
 	$(GO) list ./... | grep -v /vendor/ | xargs -L1 golint -set_exit_status
 	$(GO) mod tidy
 
@@ -42,5 +45,5 @@ test: $(SRC)
 	$(GO) test $(TEST_FLAGS) ./...
 
 $(EXE): $(SRC) $(VENDOR_MANIFEST)
-	echo "[charlestown] building"
+	@echo "[charlestown] building"
 	$(GO) build -o $(EXE) $(BUILD_FLAGS)
