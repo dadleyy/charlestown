@@ -7,7 +7,6 @@ const (
 	statsMenuWidth  = 30
 	statsMenuHeight = 4
 
-	buildMenuWidth  = 20
 	buildMenuHeight = 2
 )
 
@@ -27,8 +26,10 @@ func (renderer *uiRenderer) generate(state gameState) []renderable {
 
 	if state.cursor.mode == cursorBuild {
 		b := building{kind: state.cursor.building}
-		buildBox := box(buildMenuWidth, buildMenuHeight, fmt.Sprintf("building: %c", b.char()))
-		selection := translate(buildBox, point{state.dimensions.width - (buildMenuWidth + 2), 0})
+		text := fmt.Sprintf("building: %c (%s)", b.char(), &b)
+		width := len(text)
+		buildBox := box(width, buildMenuHeight, text)
+		selection := translate(buildBox, point{state.dimensions.width - (width + 2), 0})
 		result = append(result, selection...)
 	}
 

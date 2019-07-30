@@ -4,6 +4,7 @@ type mutation = func(state gameState) gameState
 
 func dup(state gameState) gameState {
 	return gameState{
+		funds:     state.funds,
 		buildings: state.buildings[0:],
 		world: dimensions{
 			width:  state.world.width,
@@ -63,6 +64,7 @@ func mode() mutation {
 			next.cursor.mode = cursorBuild
 		default:
 			next.cursor.mode = cursorNormal
+			next.cursor.building = buildingHouse
 		}
 		return next
 	}
@@ -81,18 +83,8 @@ func intramode() mutation {
 		next := dup(state)
 
 		if next.cursor.mode == cursorBuild {
-			target := buildingHouse
-
-			switch next.cursor.building {
-			case buildingHouse:
-				target = buildingPark
-			case buildingPark:
-				target = buildingBusiness
-			case buildingBusiness:
-				target = buildingHouse
-			}
-
-			next.cursor.building = target
+			target := next.cursor.building + 1
+			next.cursor.building = target % (buildingBusiness + 1)
 		}
 
 		return next
@@ -109,6 +101,7 @@ func interact() mutation {
 				kind:     state.cursor.building,
 			}
 
+			next.funds -= construct.cost()
 			next.buildings = append(next.buildings, construct)
 		}
 

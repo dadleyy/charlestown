@@ -43,6 +43,12 @@ func (instance *engine) draw(screen tcell.Screen, state gameState) error {
 	return nil
 }
 
+func (instance *engine) update(state gameState, dt time.Duration) gameState {
+	next := dup(state)
+	next.funds = next.funds + int(10.0*dt.Seconds())
+	return next
+}
+
 func (instance *engine) run(state gameState) error {
 	instance.Printf("initializing encoding")
 	encoding.Register()
@@ -74,9 +80,14 @@ func (instance *engine) run(state gameState) error {
 	go multiplex.poll(screen, wg, instance.Logger)
 
 	var exit error
+	last := time.Now()
 
 	for exit == nil {
+		current := time.Now()
+		dt := current.Sub(last)
+		state = instance.update(state, dt)
 		instance.draw(screen, state)
+		last = current
 
 		select {
 		case e := <-quit:
@@ -85,7 +96,7 @@ func (instance *engine) run(state gameState) error {
 			state = update(state)
 			instance.Printf("redrawing game with state %s", &state)
 		case <-timer:
-			instance.Printf("applying update")
+			instance.Printf("timer update")
 		case <-kills:
 			instance.Printf("received shutdown signal, terminating")
 			exit = fmt.Errorf("interrupted")
