@@ -14,6 +14,7 @@ type engine struct {
 	*log.Logger
 	config    Configuration
 	renderers []renderer
+	layerer   layerer
 }
 
 func (instance *engine) draw(screen tcell.Screen, state gameState) error {
@@ -31,49 +32,16 @@ func (instance *engine) draw(screen tcell.Screen, state gameState) error {
 		renderables = append(renderables, items...)
 	}
 
-	instance.Printf("rendering %d points", len(renderables))
+	layered := instance.layerer.layer(renderables, state)
+	instance.Printf("rendering %d points", len(layered))
 
-	for _, r := range renderables {
+	for _, r := range layered {
 		screen.SetContent(r.location.x, r.location.y, r.symbol, []rune{}, tcell.StyleDefault)
 	}
 
 	screen.Show()
 	return nil
 }
-
-/*
-
-	instance.Printf("setting cursor %s", state.cursor.location)
-
-	midX := state.dimensions.width / 2
-	midY := state.dimensions.height / 2
-
-	left := midX - state.cursor.location.x
-	right := left + state.world.width
-	top := midY - state.cursor.location.y
-	bottom := top + state.world.height
-
-	for i := 1; i < state.world.width; i++ {
-		col := i + left
-		screen.SetContent(col, top, symbolWallHorizontal, []rune{}, tcell.StyleDefault)
-		screen.SetContent(col, bottom, symbolWallHorizontal, []rune{}, tcell.StyleDefault)
-	}
-
-	for i := 1; i < state.world.height; i++ {
-		row := i + top
-		screen.SetContent(left, row, symbolWallVertical, []rune{}, tcell.StyleDefault)
-		screen.SetContent(right, row, symbolWallVertical, []rune{}, tcell.StyleDefault)
-	}
-
-	screen.SetContent(left, top, symbolWallTopLeft, []rune{}, tcell.StyleDefault)
-	screen.SetContent(right, top, symbolWallTopRight, []rune{}, tcell.StyleDefault)
-	screen.SetContent(left, bottom, symbolWallBottomLeft, []rune{}, tcell.StyleDefault)
-	screen.SetContent(right, bottom, symbolWallBottomRight, []rune{}, tcell.StyleDefault)
-
-	screen.Show()
-	return nil
-}
-*/
 
 func (instance *engine) run(state gameState) error {
 	instance.Printf("initializing encoding")

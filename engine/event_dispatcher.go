@@ -12,12 +12,9 @@ func (dispatch *eventDispatcher) poll(screen tcell.Screen, wg *sync.WaitGroup, l
 	event := screen.PollEvent()
 
 	for event != nil {
-		log.Printf("received event %v", event)
-
 		for _, d := range *dispatch {
 			d.HandleEvent(event)
 		}
-
 		event = screen.PollEvent()
 	}
 }

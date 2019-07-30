@@ -7,7 +7,6 @@ type cursorRenderer struct {
 }
 
 func (renderer *cursorRenderer) generate(state gameState) []renderable {
-	x := state.dimensions.width / 2
-	y := state.dimensions.height / 2
+  x, y := state.dimensions.midway()
 	return []renderable{renderable{location: point{x, y}, symbol: state.cursor.char()}}
 }

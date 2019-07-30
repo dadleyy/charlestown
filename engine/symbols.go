@@ -9,4 +9,5 @@ const (
 	symbolWallBottomRight = '┘'
 	symbolCursorNormal    = '⬩'
 	symbolCursorBuild     = '⌅'
+	symbolHouse           = '⌘'
 )

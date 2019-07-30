@@ -10,6 +10,7 @@ const (
 	keyDown        = 's'
 	keyLeft        = 'a'
 	keyRight       = 'd'
+	keyInsertHouse = 'h'
 )
 
 type keyboardReactor struct {
@@ -21,8 +22,6 @@ type keyboardReactor struct {
 func (keyboard *keyboardReactor) HandleEvent(event tcell.Event) bool {
 	switch event := event.(type) {
 	case *tcell.EventKey:
-		keyboard.Printf("received keyboard event")
-
 		switch event.Key() {
 		case tcell.KeyCtrlC, tcell.KeyEscape:
 			keyboard.Printf("exiting by user command")
@@ -40,6 +39,8 @@ func (keyboard *keyboardReactor) HandleEvent(event tcell.Event) bool {
 			keyboard.updates <- mode()
 		case tcell.KeyRune:
 			switch event.Rune() {
+			case keyInsertHouse:
+				keyboard.updates <- build("house")
 			case keyUp:
 				keyboard.updates <- move(0, -1)
 			case keyLeft:
@@ -49,7 +50,7 @@ func (keyboard *keyboardReactor) HandleEvent(event tcell.Event) bool {
 			case keyRight:
 				keyboard.updates <- move(1, 0)
 			default:
-				keyboard.Printf("character key pressed: '%c'", event.Rune())
+				keyboard.Printf("unknown character key pressed: '%c'", event.Rune())
 			}
 		default:
 			keyboard.Printf("unknown keyboard character '%c' (%v)", event.Rune(), event.Key())

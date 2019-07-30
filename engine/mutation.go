@@ -74,3 +74,11 @@ func resize(width, height int) mutation {
 		return next
 	}
 }
+
+func build(kind string) mutation {
+	return func(state gameState) gameState {
+		next := dup(state)
+		next.buildings = append(next.buildings, state.cursor.location)
+		return next
+	}
+}
