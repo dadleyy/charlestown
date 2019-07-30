@@ -1,4 +1,4 @@
-# Charlestown
+# Charlestown [![status-image]][status-url]
 
 City building in the terminal.
 
@@ -11,3 +11,6 @@ $ make
 ## Contributing
 
 See [contributing.md](/contributing.md).
+
+[status-image]: https://travis-ci.org/dadleyy/charlestown.svg?branch=master
+[status-url]: https://travis-ci.org/dadleyy/charlestown
