@@ -1,16 +1,17 @@
 package engine
 
 import "fmt"
+import "github.com/dadleyy/charlestown/engine/objects"
 
 type layerer struct {
 }
 
-func (l layerer) layer(renderables []renderable, state gameState) []renderable {
-	result := make([]renderable, 0, len(renderables))
+func (l layerer) layer(renderables []objects.Renderable, state objects.Game) []objects.Renderable {
+	result := make([]objects.Renderable, 0, len(renderables))
 	locations := make(map[string]int)
 
 	for _, item := range renderables {
-		key := fmt.Sprintf("%s", item.location)
+		key := fmt.Sprintf("%s", &item.Location)
 		parent, dupe := locations[key]
 
 		if !dupe {
@@ -19,7 +20,7 @@ func (l layerer) layer(renderables []renderable, state gameState) []renderable {
 
 		locations[key] = parent + 1
 
-		if !dupe && item.symbol == ' ' {
+		if !dupe && item.Symbol == ' ' {
 			continue
 		}
 

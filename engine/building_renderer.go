@@ -1,6 +1,8 @@
 package engine
 
 import "log"
+import "github.com/dadleyy/charlestown/engine/objects"
+import "github.com/dadleyy/charlestown/engine/constants"
 
 const (
 	neighborWest  = "west"
@@ -13,20 +15,20 @@ type buildingRenderer struct {
 	*log.Logger
 }
 
-func (renderer *buildingRenderer) neighbors(p point, all []building) map[string]building {
-	result := make(map[string]building)
+func (renderer *buildingRenderer) neighbors(p objects.Point, all []objects.Building) map[string]objects.Building {
+	result := make(map[string]objects.Building)
 
 	for _, b := range all {
-		if b.location.x == p.x-2 && b.location.y == p.y {
+		if b.Location.X == p.X-2 && b.Location.Y == p.Y {
 			result[neighborWest] = b
 		}
-		if b.location.x == p.x && b.location.y == p.y-1 {
+		if b.Location.X == p.X && b.Location.Y == p.Y-1 {
 			result[neighborNorth] = b
 		}
-		if b.location.x == p.x && b.location.y == p.y+1 {
+		if b.Location.X == p.X && b.Location.Y == p.Y+1 {
 			result[neighborSouth] = b
 		}
-		if b.location.x == p.x+2 && b.location.y == p.y {
+		if b.Location.X == p.X+2 && b.Location.Y == p.Y {
 			result[neighborEast] = b
 		}
 	}
@@ -50,7 +52,7 @@ func (renderer *buildingRenderer) isTopMid(size int, n, e, s, w bool) bool {
 	return ((size == 2) && n && w) || (size == 3) && n && e && w
 }
 
-func (renderer *buildingRenderer) symbolForRoad(neighbors map[string]building) rune {
+func (renderer *buildingRenderer) symbolForRoad(neighbors map[string]objects.Building) rune {
 	_, n := neighbors[neighborNorth]
 	_, e := neighbors[neighborEast]
 	_, s := neighbors[neighborSouth]
@@ -58,38 +60,43 @@ func (renderer *buildingRenderer) symbolForRoad(neighbors map[string]building) r
 	size := len(neighbors)
 
 	if renderer.isCross(size, n, e, s, w) {
-		return symbolWallCross
+		return constants.SymbolWallCross
 	} else if renderer.isBottomMid(size, n, e, s, w) {
-		return symbolWallWestSouthEast
+		return constants.SymbolWallWestSouthEast
 	} else if renderer.isBottomLeft(size, n, e, s, w) {
-		return symbolWallBottomLeft
+		return constants.SymbolWallBottomLeft
 	} else if renderer.isTopMid(size, n, e, s, w) {
-		return symbolWallWestNorthEast
+		return constants.SymbolWallWestNorthEast
 	} else if (n && s) || (n && size == 1) || (s && size == 1) {
-		return symbolWallVertical
+		return constants.SymbolWallVertical
 	}
 
-	return symbolWallHorizontal
+	return constants.SymbolWallHorizontal
 }
 
-func (renderer *buildingRenderer) generate(state gameState) []renderable {
-	buildings := make([]renderable, 0, len(state.buildings))
-	hx, hy := state.dimensions.midway()
-	cx := state.cursor.location.x
-	cy := state.cursor.location.y
+func (renderer *buildingRenderer) generate(state objects.Game) []objects.Renderable {
+	buildings := make([]objects.Renderable, 0, len(state.Buildings))
 
-	for _, p := range state.buildings {
-		projected := point{p.location.x + hx - cx, p.location.y + hy - cy}
+	hx, hy := state.Dimensions.Midway()
+	cx := state.Cursor.Location.X
+	cy := state.Cursor.Location.Y
 
-		if p.kind == buildingRoad {
-			neighbors := renderer.neighbors(p.location, state.buildings)
-			buddy := renderable{point{projected.x + 1, projected.y}, p.char()}
-			self := renderable{projected, renderer.symbolForRoad(neighbors)}
+	for _, p := range state.Buildings {
+		projected := objects.Point{p.Location.X + hx - cx, p.Location.Y + hy - cy}
+
+		if p.Kind == constants.BuildingRoad {
+			// Find our neighbors
+			neighbors := renderer.neighbors(p.Location, state.Buildings)
+
+			// To make a better grid, we're skipping every other cell along the x axis
+			buddy := objects.Renderable{objects.Point{projected.X + 1, projected.Y}, p.Char()}
+
+			self := objects.Renderable{projected, renderer.symbolForRoad(neighbors)}
 			buildings = append(buildings, buddy, self)
 			continue
 		}
 
-		buildings = append(buildings, renderable{projected, p.char()})
+		buildings = append(buildings, objects.Renderable{projected, p.Char()})
 	}
 
 	return buildings

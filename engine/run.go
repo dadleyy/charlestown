@@ -4,6 +4,7 @@ import "os"
 import "io"
 import "log"
 import "path/filepath"
+import "github.com/dadleyy/charlestown/engine/objects"
 
 // Run creates and loops the game engine, mostly used to prepare the logger.
 func Run(config Configuration) error {
@@ -41,9 +42,16 @@ func Run(config Configuration) error {
 	defer writer.Close()
 
 	logger := log.New(io.MultiWriter(writer), "[ch] ", log.Ldate|log.Lshortfile|log.Ltime|log.LUTC)
-	world := dimensions{120, 40}
-	cursor := cursor{location: point{world.width / 2, world.height / 2}}
-	state := gameState{world: world, cursor: cursor}
+
+	world := objects.Dimensions{120, 40}
+
+	cursor := objects.Cursor{
+		Location: objects.Point{world.Width / 2, world.Height / 4},
+	}
+	state := objects.Game{
+		World:  world,
+		Cursor: cursor,
+	}
 
 	instance := engine{
 		Logger: logger,
