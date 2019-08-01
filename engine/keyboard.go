@@ -4,6 +4,9 @@ import "fmt"
 import "log"
 import "github.com/gdamore/tcell"
 
+// import "github.com/dadleyy/charlestown/engine/objects"
+import "github.com/dadleyy/charlestown/engine/mutations"
+
 const (
 	keyToggleBuild = 'b'
 	keyUp          = 'w'
@@ -18,7 +21,7 @@ const (
 type keyboardReactor struct {
 	*log.Logger
 	quit    chan<- error
-	updates chan<- mutation
+	updates chan<- mutations.Mutation
 }
 
 // HandleEvent implements the tcell.EventHandler interface for the keyboard reactor.
@@ -35,13 +38,13 @@ func (keyboard *keyboardReactor) HandleEvent(event tcell.Event) bool {
 func (keyboard *keyboardReactor) runeEvent(key rune) bool {
 	switch key {
 	case keyUp:
-		keyboard.updates <- move(0, -verticalMovementSpeed)
+		keyboard.updates <- mutations.Move(0, -verticalMovementSpeed)
 	case keyLeft:
-		keyboard.updates <- move(-horizontalMovementSpeed, 0)
+		keyboard.updates <- mutations.Move(-horizontalMovementSpeed, 0)
 	case keyDown:
-		keyboard.updates <- move(0, verticalMovementSpeed)
+		keyboard.updates <- mutations.Move(0, verticalMovementSpeed)
 	case keyRight:
-		keyboard.updates <- move(horizontalMovementSpeed, 0)
+		keyboard.updates <- mutations.Move(horizontalMovementSpeed, 0)
 	default:
 		keyboard.Printf("unknown character key pressed: '%c'", key)
 	}
@@ -55,19 +58,19 @@ func (keyboard *keyboardReactor) keyEvent(event *tcell.EventKey) bool {
 		keyboard.quit <- fmt.Errorf("user")
 		return false
 	case tcell.KeyBacktab:
-		keyboard.updates <- intramode()
+		keyboard.updates <- mutations.Intramode()
 	case tcell.KeyUp:
-		keyboard.updates <- move(0, -verticalMovementSpeed)
+		keyboard.updates <- mutations.Move(0, -verticalMovementSpeed)
 	case tcell.KeyDown:
-		keyboard.updates <- move(0, verticalMovementSpeed)
+		keyboard.updates <- mutations.Move(0, verticalMovementSpeed)
 	case tcell.KeyLeft:
-		keyboard.updates <- move(-horizontalMovementSpeed, 0)
+		keyboard.updates <- mutations.Move(-horizontalMovementSpeed, 0)
 	case tcell.KeyRight:
-		keyboard.updates <- move(horizontalMovementSpeed, 0)
+		keyboard.updates <- mutations.Move(horizontalMovementSpeed, 0)
 	case tcell.KeyTab:
-		keyboard.updates <- mode()
+		keyboard.updates <- mutations.Mode()
 	case tcell.KeyEnter:
-		keyboard.updates <- interact()
+		keyboard.updates <- mutations.Interact(keyboard.Logger)
 	case tcell.KeyRune:
 		return keyboard.runeEvent(event.Rune())
 	default:

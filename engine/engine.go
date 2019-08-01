@@ -9,6 +9,9 @@ import "syscall"
 import "os/signal"
 import "github.com/gdamore/tcell"
 import "github.com/gdamore/tcell/encoding"
+import "github.com/dadleyy/charlestown/engine/objects"
+import "github.com/dadleyy/charlestown/engine/mutations"
+import "github.com/dadleyy/charlestown/engine/constants"
 
 type engine struct {
 	*log.Logger
@@ -17,15 +20,15 @@ type engine struct {
 	layerer   layerer
 }
 
-func (instance *engine) draw(screen tcell.Screen, state gameState) error {
+func (instance *engine) draw(screen tcell.Screen, state objects.Game) error {
 	screen.Clear()
 
-	if state.dimensions.height < 1 || state.dimensions.width < 1 {
+	if state.Dimensions.Area() < 1 {
 		instance.Printf("skipping to draw - no dimensions")
 		return nil
 	}
 
-	renderables := make([]renderable, 0, state.world.width*state.world.height)
+	renderables := make([]objects.Renderable, 0, state.World.Area())
 
 	for _, renderer := range instance.renderers {
 		items := renderer.generate(state)
@@ -33,78 +36,107 @@ func (instance *engine) draw(screen tcell.Screen, state gameState) error {
 	}
 
 	layered := instance.layerer.layer(renderables, state)
+
 	for _, r := range layered {
-		screen.SetContent(r.location.x, r.location.y, r.symbol, []rune{}, tcell.StyleDefault)
+		screen.SetContent(r.Location.X, r.Location.Y, r.Symbol, []rune{}, tcell.StyleDefault)
 	}
 
 	screen.Show()
 	return nil
 }
 
-func (instance *engine) update(state gameState, dt time.Duration) gameState {
-	next := dup(state)
-	next.funds = next.funds + int(5.0*economyMultiplier*dt.Seconds())
-	return next
-}
-
-func (instance *engine) run(state gameState) error {
-	instance.Printf("initializing encoding")
+func (instance *engine) run(state objects.Game) error {
+	instance.Printf("[init] initializing encoding")
 	encoding.Register()
+
+	instance.Printf("[init] creating tcell screen")
 	screen, e := tcell.NewScreen()
 
 	if e != nil {
 		return e
 	}
 
-	kills := make(chan os.Signal, 1)
-	signal.Notify(kills, syscall.SIGINT, syscall.SIGSTOP, syscall.SIGTERM)
-
-	quit := make(chan error)
-	redraw := make(chan mutation)
-	wg := &sync.WaitGroup{}
-	timer := time.Tick(time.Millisecond * 50)
-
-	instance.Printf("initializing screen")
+	instance.Printf("[init] initializing screen")
 	if e := screen.Init(); e != nil {
 		return e
 	}
 
-	instance.Printf("starting keyboard reactor")
-	multiplex := eventDispatcher{
-		&keyboardReactor{instance.Logger, quit, redraw},
-		&viewportReactor{instance.Logger, quit, redraw},
-	}
+	// Bind some syscall signals to a kill channel.
+	instance.Printf("[init] registering syscall listeners")
+	kills := make(chan os.Signal, 1)
+	signal.Notify(kills, syscall.SIGINT, syscall.SIGSTOP, syscall.SIGTERM)
 
-	go multiplex.poll(screen, wg, instance.Logger)
+	// Create a channel for user input to kill our loop.
+	quit := make(chan error)
+
+	// Create the queue of updates we'll receive and apply over.
+	updates := make(chan mutations.Mutation, 10)
+	wg := &sync.WaitGroup{}
+
+	instance.Printf("[init] creating event handlers")
+	// Create the list of event handlers that will receive tcell events
+	handlers := []tcell.EventHandler{
+		&keyboardReactor{instance.Logger, quit, updates},
+		&viewportReactor{instance.Logger, updates},
+	}
+	multiplex := eventDispatcher{instance.Logger, handlers}
+
+	stop := make(chan struct{})
+	econ := economyManager{instance.Logger, updates}
+
+	instance.Printf("[init] starting event multiplexer")
+	go multiplex.poll(screen, wg)
+
+	instance.Printf("[init] starting economy manager")
+	go econ.tick(stop, wg)
 
 	var exit error
 	last := time.Now()
 
+	instance.Printf("[init] setting dimensions + first draw")
+	width, height := screen.Size()
+	state.Dimensions = objects.Dimensions{width, height}
+	instance.draw(screen, state)
+
+	instance.Printf("[init] entering main game loop")
 	for exit == nil {
-		current := time.Now()
-		dt := current.Sub(last)
-		state = instance.update(state, dt)
-		instance.draw(screen, state)
-		last = current
+		state.Frame++
 
 		select {
-		case e := <-quit:
-			exit = e
-		case update := <-redraw:
+		case update := <-updates:
 			state = update(state)
-		case <-timer:
-			instance.Printf("timer update, dt %f seconds", dt.Seconds()*1000)
-		case <-kills:
-			instance.Printf("received shutdown signal, terminating")
+		// terminal states, user
+		case <-quit:
+			instance.Printf("[shutdown] received user shutdown command")
 			exit = fmt.Errorf("interrupted")
+			break
+		case <-kills:
+			instance.Printf("[shutdown] received shutdown signal, terminating")
+			exit = fmt.Errorf("interrupted")
+			break
+		}
+
+		if exit == nil {
+			current := time.Now()
+			dt := current.Sub(last)
+
+			if s := dt.Seconds(); s >= constants.IdleDelay.Seconds() {
+				instance.draw(screen, state)
+				last = current
+			}
 		}
 	}
 
-	instance.Printf("game loop terminated, clearing screen and closing buffers")
+	instance.Printf("[shutdown] game loop terminated. clearing screen and freeing tcell resources")
 	screen.Clear()
 	screen.Fini()
-	instance.Printf("waiting for loop reactors")
+
+	instance.Printf("[shutdown] closing economy updater")
+	stop <- struct{}{}
+
+	instance.Printf("[shutdown] waiting for loop reactors")
 	wg.Wait()
-	instance.Printf("terminating")
+
+	instance.Printf("[shutdown] complete")
 	return exit
 }
