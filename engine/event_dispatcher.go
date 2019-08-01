@@ -5,7 +5,6 @@ import "sync"
 import "github.com/gdamore/tcell"
 
 type eventDispatcher struct {
-	*log.Logger
 	handlers []tcell.EventHandler
 }
 
@@ -22,5 +21,5 @@ func (dispatch *eventDispatcher) poll(screen tcell.Screen, wg *sync.WaitGroup) {
 		event = screen.PollEvent()
 	}
 
-	dispatch.Printf("[events] event loop terminated")
+	log.Printf("[events] event loop terminated")
 }

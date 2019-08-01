@@ -5,4 +5,8 @@ const (
 	CursorNormal = iota
 	// CursorBuild allows the user to create buildings.
 	CursorBuild
+	// CursorMove allows the user to move buildings.
+	CursorMove
+	// CursorDemolish allows the user to delete buildings.
+	CursorDemolish
 )

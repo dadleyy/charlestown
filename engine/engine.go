@@ -14,7 +14,6 @@ import "github.com/dadleyy/charlestown/engine/mutations"
 import "github.com/dadleyy/charlestown/engine/constants"
 
 type engine struct {
-	*log.Logger
 	config    Configuration
 	renderers []renderer
 	layerer   layerer
@@ -24,7 +23,7 @@ func (instance *engine) draw(screen tcell.Screen, state objects.Game) error {
 	screen.Clear()
 
 	if state.Dimensions.Area() < 1 {
-		instance.Printf("skipping to draw - no dimensions")
+		log.Printf("skipping to draw - no dimensions")
 		return nil
 	}
 
@@ -38,7 +37,14 @@ func (instance *engine) draw(screen tcell.Screen, state objects.Game) error {
 	layered := instance.layerer.layer(renderables, state)
 
 	for _, r := range layered {
-		screen.SetContent(r.Location.X, r.Location.Y, r.Symbol, []rune{}, tcell.StyleDefault)
+		style := tcell.StyleDefault
+
+		if r.Color != nil {
+			red, green, blue, _ := r.Color.RGBA()
+			style = tcell.StyleDefault.Foreground(tcell.NewRGBColor(int32(red), int32(green), int32(blue)))
+		}
+
+		screen.SetContent(r.Location.X, r.Location.Y, r.Symbol, []rune{}, style)
 	}
 
 	screen.Show()
@@ -46,23 +52,23 @@ func (instance *engine) draw(screen tcell.Screen, state objects.Game) error {
 }
 
 func (instance *engine) run(state objects.Game) error {
-	instance.Printf("[init] initializing encoding")
+	log.Printf("[init] initializing encoding")
 	encoding.Register()
 
-	instance.Printf("[init] creating tcell screen")
+	log.Printf("[init] creating tcell screen")
 	screen, e := tcell.NewScreen()
 
 	if e != nil {
 		return e
 	}
 
-	instance.Printf("[init] initializing screen")
+	log.Printf("[init] initializing screen")
 	if e := screen.Init(); e != nil {
 		return e
 	}
 
 	// Bind some syscall signals to a kill channel.
-	instance.Printf("[init] registering syscall listeners")
+	log.Printf("[init] registering syscall listeners")
 	kills := make(chan os.Signal, 1)
 	signal.Notify(kills, syscall.SIGINT, syscall.SIGSTOP, syscall.SIGTERM)
 
@@ -73,70 +79,81 @@ func (instance *engine) run(state objects.Game) error {
 	updates := make(chan mutations.Mutation, 10)
 	wg := &sync.WaitGroup{}
 
-	instance.Printf("[init] creating event handlers")
+	log.Printf("[init] creating event handlers")
 	// Create the list of event handlers that will receive tcell events
 	handlers := []tcell.EventHandler{
-		&keyboardReactor{instance.Logger, quit, updates},
-		&viewportReactor{instance.Logger, updates},
+		&keyboardReactor{quit, updates},
+		&viewportReactor{updates},
 	}
-	multiplex := eventDispatcher{instance.Logger, handlers}
+	multiplex := eventDispatcher{handlers}
 
 	stop := make(chan struct{})
-	econ := economyManager{instance.Logger, updates}
+	mutators := []mutator{
+		&economyMutator{},
+		&flashMutator{},
+		&turnMutator{},
+	}
+	dispatch := timingDispatcher{updates, mutators}
 
-	instance.Printf("[init] starting event multiplexer")
+	log.Printf("[init] starting event multiplexer")
 	go multiplex.poll(screen, wg)
 
-	instance.Printf("[init] starting economy manager")
-	go econ.tick(stop, wg)
+	log.Printf("[init] starting scheduled mutator dispatch")
+	go dispatch.start(stop, wg)
 
 	var exit error
 	last := time.Now()
 
-	instance.Printf("[init] setting dimensions + first draw")
+	log.Printf("[init] setting dimensions + first draw")
 	width, height := screen.Size()
 	state.Dimensions = objects.Dimensions{width, height}
 	instance.draw(screen, state)
 
-	instance.Printf("[init] entering main game loop")
+	log.Printf("[init] entering main game loop")
 	for exit == nil {
-		state.Frame++
-
 		select {
 		case update := <-updates:
-			state = update(state)
+			next := update.Apply(state)
+
+			if len(next.Buildings) != len(state.Buildings) {
+				log.Printf("recalculating neighbors")
+			}
+
+			state = next
 		// terminal states, user
 		case <-quit:
-			instance.Printf("[shutdown] received user shutdown command")
+			log.Printf("[shutdown] received user shutdown command")
 			exit = fmt.Errorf("interrupted")
 			break
 		case <-kills:
-			instance.Printf("[shutdown] received shutdown signal, terminating")
+			log.Printf("[shutdown] received shutdown signal, terminating")
 			exit = fmt.Errorf("interrupted")
 			break
 		}
 
 		if exit == nil {
 			current := time.Now()
+			state.Frame++
 			dt := current.Sub(last)
 
-			if s := dt.Seconds(); s >= constants.IdleDelay.Seconds() {
+			if s := dt.Seconds(); s >= constants.IdleDelay.Seconds() || state.Frame > 5 {
 				instance.draw(screen, state)
 				last = current
+				state.Frame = 0
 			}
 		}
 	}
 
-	instance.Printf("[shutdown] game loop terminated. clearing screen and freeing tcell resources")
+	log.Printf("[shutdown] game loop terminated. clearing screen and freeing tcell resources")
 	screen.Clear()
 	screen.Fini()
 
-	instance.Printf("[shutdown] closing economy updater")
+	log.Printf("[shutdown] closing economy updater")
 	stop <- struct{}{}
 
-	instance.Printf("[shutdown] waiting for loop reactors")
+	log.Printf("[shutdown] waiting for loop reactors")
 	wg.Wait()
 
-	instance.Printf("[shutdown] complete")
+	log.Printf("[shutdown] complete")
 	return exit
 }

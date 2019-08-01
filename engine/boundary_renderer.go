@@ -9,13 +9,7 @@ type boundaryRenderer struct {
 }
 
 func (renderer boundaryRenderer) generate(state objects.Game) []objects.Renderable {
-	bounding := drawing.Box(state.World.Width, state.World.Height)
-
-	midx, midy := state.Dimensions.Midway()
-	point := objects.Point{
-		X: midx - state.Cursor.Location.X,
-		Y: midy - state.Cursor.Location.Y,
-	}
-
-	return drawing.Translate(bounding, point)
+	bounding := drawing.Box(state.World.Width, state.World.Height-1)
+	mid := state.Dimensions.MidwayPoint()
+	return drawing.Translate(bounding, mid.Translate(-state.Cursor.Location.X, -state.Cursor.Location.Y))
 }

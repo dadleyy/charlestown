@@ -10,11 +10,10 @@ jobs:
   include:
     - stage: "build"
       name: "build"
-      script: make
-    - name: "test"
-      script: make test
-    - name: "lint"
-      script: make lint
+      script:
+        - make
+        - make lint
+        - make test
     - stage: "deploy"
       script: echo "todo"
 stages:

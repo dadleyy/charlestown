@@ -21,6 +21,8 @@ const (
 	SymbolWallWestSouthEast = 9516
 	// SymbolWallWestNorthEast is used for forks.
 	SymbolWallWestNorthEast = 9524
+	// SymbolWallNorthEastSouth used for roads with north & south neighbors
+	SymbolWallNorthEastSouth = 9500
 
 	// misc technical: https://www.fileformat.info/info/unicode/block/miscellaneous_technical/list.htm
 
@@ -28,6 +30,10 @@ const (
 	SymbolCursorNormal = 9022
 	// SymbolCursorBuild is the characer rendered for the cursor in build mode.
 	SymbolCursorBuild = 8965
+	// SymbolCursorDemolish is the characer rendered for the cursor in demolish mode.
+	SymbolCursorDemolish = 8960
+	// SymbolCursorMove is the characer rendered for the cursor in move mode.
+	SymbolCursorMove = 9039
 
 	// runic: https://www.fileformat.info/info/unicode/block/runic/list.htm
 
@@ -37,4 +43,11 @@ const (
 	SymbolPark = 5816
 	// SymbolBusiness is used for rendering businesses.
 	SymbolBusiness = 5795
+	// SymbolPower is used for rendering power buildings.
+	SymbolPower = 5834
+
+	// Geometric: https://www.fileformat.info/info/unicode/block/geometric_shapes/list.htm
+
+	// SymbolProgressFill is used as the filler for progress bars.
+	SymbolProgressFill = 9640
 )
