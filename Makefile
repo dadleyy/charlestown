@@ -7,7 +7,7 @@ GO=go
 RM=rm -rf
 LDFLAGS="-s -w"
 BUILD_FLAGS=-x -v -ldflags $(LDFLAGS)
-CYCLO_FLAGS=-over 15
+CYCLO_FLAGS=-over 25
 COVERPROFILE=./dist/tests/cover.out
 TEST_FLAGS=-v -count=1 -cover -covermode=set -benchmem -coverprofile=$(COVERPROFILE)
 
@@ -39,6 +39,7 @@ lint: $(SRC)
 	$(GO) mod tidy
 
 test: $(SRC)
+	@echo "[charlestown] running tests"
 	mkdir -p $(basename $(COVERPROFILE))
 	touch $(COVERPROFILE)
 	$(GO) vet

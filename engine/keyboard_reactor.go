@@ -19,7 +19,6 @@ const (
 )
 
 type keyboardReactor struct {
-	*log.Logger
 	quit    chan<- error
 	updates chan<- mutations.Mutation
 }
@@ -30,7 +29,7 @@ func (keyboard *keyboardReactor) HandleEvent(event tcell.Event) bool {
 	case *tcell.EventKey:
 		return keyboard.keyEvent(event)
 	default:
-		keyboard.Printf("received unknown event, polling next")
+		log.Printf("received unknown event, polling next")
 	}
 	return true
 }
@@ -46,7 +45,7 @@ func (keyboard *keyboardReactor) runeEvent(key rune) bool {
 	case keyRight:
 		keyboard.updates <- mutations.Move(horizontalMovementSpeed, 0)
 	default:
-		keyboard.Printf("unknown character key pressed: '%c'", key)
+		log.Printf("unknown character key pressed: '%c'", key)
 	}
 	return true
 }
@@ -54,9 +53,11 @@ func (keyboard *keyboardReactor) runeEvent(key rune) bool {
 func (keyboard *keyboardReactor) keyEvent(event *tcell.EventKey) bool {
 	switch event.Key() {
 	case tcell.KeyCtrlC, tcell.KeyEscape:
-		keyboard.Printf("exiting by user command")
+		log.Printf("exiting by user command")
 		keyboard.quit <- fmt.Errorf("user")
 		return false
+	case tcell.KeyCtrlB:
+		keyboard.updates <- mutations.Debug()
 	case tcell.KeyBacktab:
 		keyboard.updates <- mutations.Intramode()
 	case tcell.KeyUp:
@@ -70,11 +71,11 @@ func (keyboard *keyboardReactor) keyEvent(event *tcell.EventKey) bool {
 	case tcell.KeyTab:
 		keyboard.updates <- mutations.Mode()
 	case tcell.KeyEnter:
-		keyboard.updates <- mutations.Interact(keyboard.Logger)
+		keyboard.updates <- mutations.Interact()
 	case tcell.KeyRune:
 		return keyboard.runeEvent(event.Rune())
 	default:
-		keyboard.Printf("unknown keyboard character '%c' (%v): %s", event.Rune(), event.Key(), event.Name())
+		log.Printf("unknown keyboard character '%c' (%v): %s", event.Rune(), event.Key(), event.Name())
 	}
 	return true
 }

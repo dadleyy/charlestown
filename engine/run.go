@@ -3,8 +3,10 @@ package engine
 import "os"
 import "io"
 import "log"
+import "time"
 import "path/filepath"
 import "github.com/dadleyy/charlestown/engine/objects"
+import "github.com/dadleyy/charlestown/engine/constants"
 
 // Run creates and loops the game engine, mostly used to prepare the logger.
 func Run(config Configuration) error {
@@ -41,7 +43,8 @@ func Run(config Configuration) error {
 
 	defer writer.Close()
 
-	logger := log.New(io.MultiWriter(writer), "[ch] ", log.Ldate|log.Lshortfile|log.Ltime|log.LUTC)
+	log.SetOutput(io.MultiWriter(writer))
+	log.SetFlags(log.Ldate | log.Lshortfile | log.Ltime | log.LUTC)
 
 	world := objects.Dimensions{120, 40}
 
@@ -51,16 +54,20 @@ func Run(config Configuration) error {
 	state := objects.Game{
 		World:  world,
 		Cursor: cursor,
+		Funds:  5 * constants.EconomyMultiplier,
+		Turn: objects.Turn{
+			Actions: objects.TurnActions{0, 5 + constants.BaseTurnCardinality},
+			Start:   time.Now(),
+		},
 	}
 
 	instance := engine{
-		Logger: logger,
 		config: config,
 		renderers: []renderer{
-			&boundaryRenderer{logger},
-			&buildingRenderer{logger},
-			&cursorRenderer{logger},
-			&uiRenderer{logger, true},
+			&boundaryRenderer{},
+			&buildingRenderer{},
+			&cursorRenderer{},
+			&uiRenderer{},
 		},
 	}
 

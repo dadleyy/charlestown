@@ -33,9 +33,9 @@ func Box(width, height int, text ...string) []objects.Renderable {
 	result := make([]objects.Renderable, 0, width*height)
 
 	// nolint: gocyclo
-	for x := 0; x <= width; x++ {
-		for y := 0; y <= height; y++ {
-			symbol := boxSymbol(x, y, width, height)
+	for x := 0; x <= width+1; x++ {
+		for y := 0; y <= height+1; y++ {
+			symbol := boxSymbol(x, y, width+1, height+1)
 
 			if len(text) > y-1 && y > 0 {
 				message := text[y-1]
