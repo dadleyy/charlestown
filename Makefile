@@ -2,10 +2,10 @@ NAME=charlestown
 EXE=./dist/charlestown/bin/$(NAME)
 VENDOR_MANIFEST=./vendor/modules.txt
 VENDOR_FLAGS=-v
-SRC=$(shell git ls-files '**/*.go')
+SRC=$(shell git ls-files | grep -e '\.go')
 GO=go
 RM=rm -rf
-LDFLAGS="-s -w"
+LDFLAGS="-s -w -X github.com/dadleyy/charlestown/engine/constants.AppVersion=$(shell ./auto/git-version.sh)"
 BUILD_FLAGS=-x -v -ldflags $(LDFLAGS)
 CYCLO_FLAGS=-over 25
 COVERPROFILE=./dist/tests/cover.out
@@ -14,6 +14,9 @@ TEST_FLAGS=-v -count=1 -cover -covermode=set -benchmem -coverprofile=$(COVERPROF
 .PHONY: all test clean
 
 all: $(EXE)
+
+files:
+	@echo $(SRC)
 
 clean:
 	$(RM) $(dir $(EXE))

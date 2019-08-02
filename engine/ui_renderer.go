@@ -7,13 +7,21 @@ import "github.com/dadleyy/charlestown/engine/objects"
 import "github.com/dadleyy/charlestown/engine/drawing"
 import "github.com/dadleyy/charlestown/engine/constants"
 
-const (
-	debugMenuWidth = 30
-)
-
 type uiRenderer struct {
 	*log.Logger
 	last time.Time
+}
+
+func (renderer *uiRenderer) textWidth(input []string) int {
+	max := 0
+
+	for _, t := range input {
+		if l := len(t); l > max {
+			max = l
+		}
+	}
+
+	return max
 }
 
 func (renderer *uiRenderer) progress(label string, percentage float64, width int) string {
@@ -40,13 +48,7 @@ func (renderer *uiRenderer) statsMenu(state objects.Game) []objects.Renderable {
 		fmt.Sprintf("Population: %d (%+d/s)", state.Population, state.PopulationGrowth),
 	}
 
-	max := 0
-	for _, t := range texts {
-		if size := len(t); size > max {
-			max = size
-		}
-	}
-
+	max := renderer.textWidth(texts)
 	actions, timing := state.Turn.Progress()
 	texts = append(texts, renderer.progress("Actions", actions, max))
 	texts = append(texts, renderer.progress("Time", timing, max))
@@ -59,7 +61,7 @@ func (renderer *uiRenderer) debugMenu(state objects.Game) []objects.Renderable {
 	dt := time.Now().Sub(renderer.last).Seconds()
 	fps := 1 / dt
 	texts := []string{
-		fmt.Sprintf("Debug Information:"),
+		fmt.Sprintf("Debug Information (version %s):", constants.AppVersion),
 		fmt.Sprintf("Player location: %s", &state.Cursor.Location),
 		fmt.Sprintf("Buildings: %d", len(state.Buildings)),
 		fmt.Sprintf("Frame: %d (%.2f f/s)", state.Frame, fps),
@@ -71,8 +73,9 @@ func (renderer *uiRenderer) debugMenu(state objects.Game) []objects.Renderable {
 		texts = append(texts, fmt.Sprintf("- expiring %.2f", f.Expires.Sub(time.Now()).Seconds()))
 	}
 
-	box := drawing.Box(debugMenuWidth, len(texts), texts...)
-	return drawing.Translate(box, objects.Point{width - (debugMenuWidth + constants.ViewportRightPadding), 0})
+	max := renderer.textWidth(texts)
+	box := drawing.Box(max, len(texts), texts...)
+	return drawing.Translate(box, objects.Point{width - (max + constants.ViewportRightPadding), 0})
 }
 
 func (renderer *uiRenderer) flash(flash objects.Flash, pos objects.Point) []objects.Renderable {
