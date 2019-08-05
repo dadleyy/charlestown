@@ -1,7 +1,6 @@
 package main
 
 import "os"
-import "log"
 import "fmt"
 import "flag"
 import "github.com/joho/godotenv"
@@ -27,6 +26,6 @@ func main() {
 	}
 
 	if e := engine.Run(config); e != nil {
-		log.Printf("[error] engine error %s", e)
+		fmt.Printf("[error] engine error %s\n", e)
 	}
 }
