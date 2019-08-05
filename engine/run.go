@@ -61,14 +61,10 @@ func Run(config Configuration) error {
 		},
 	}
 
-	instance := engine{
-		config: config,
-		renderers: []renderer{
-			&boundaryRenderer{},
-			&buildingRenderer{},
-			&cursorRenderer{},
-			&uiRenderer{},
-		},
+	instance := newTcellEngine(config)
+
+	if true {
+		instance = newOpenGLEngine(config)
 	}
 
 	return instance.run(state)

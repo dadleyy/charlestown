@@ -8,9 +8,6 @@ import "github.com/joho/godotenv"
 import "github.com/dadleyy/charlestown/engine"
 import "github.com/dadleyy/charlestown/engine/constants"
 
-type cliOptions struct {
-}
-
 func main() {
 	godotenv.Load()
 	config := engine.Configuration{}
