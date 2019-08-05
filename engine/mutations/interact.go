@@ -97,8 +97,8 @@ func (i interact) build(next objects.Game) objects.Game {
 		// Check for a neighbor to the east.
 		if east, ok := cache[x+2]; ok {
 			if neighbor, ok := east[y]; ok {
-				building.Neighbors = i.replaceNeighbor(building.Neighbors, objects.Neighbor{neighbor, constants.NeighborWest})
-				neighbor.Neighbors = i.replaceNeighbor(neighbor.Neighbors, objects.Neighbor{building, constants.NeighborEast})
+				building.Neighbors = i.replaceNeighbor(building.Neighbors, objects.Neighbor{neighbor, constants.NeighborEast})
+				neighbor.Neighbors = i.replaceNeighbor(neighbor.Neighbors, objects.Neighbor{building, constants.NeighborWest})
 				cache[x+2][y] = neighbor
 			}
 		}
@@ -114,7 +114,11 @@ func (i interact) build(next objects.Game) objects.Game {
 	}
 
 	next.Buildings = addditions
-	return next
+	return i.power(next)
+}
+
+func (i interact) power(game objects.Game) objects.Game {
+	return game
 }
 
 func (i interact) demolish(game objects.Game) objects.Game {
@@ -144,7 +148,7 @@ func (i interact) demolish(game objects.Game) objects.Game {
 	}
 
 	game.Buildings = buildings
-	return game
+	return i.power(game)
 }
 
 func (i interact) move(game objects.Game) objects.Game {
@@ -156,21 +160,17 @@ func (i interact) move(game objects.Game) objects.Game {
 	}
 
 	log.Printf("initiating move")
-	buildings := make([]objects.Building, 0, len(game.Buildings))
 
 	for _, building := range game.Buildings {
 		hit := building.Location.Equals(game.Cursor.Location)
 
-		if !hit {
-			buildings = append(buildings, building)
-			continue
+		if hit {
+			game.Cursor.Inventory = []objects.Building{building}
+			break
 		}
-
-		game.Cursor.Inventory = []objects.Building{building}
 	}
 
-	game.Buildings = buildings
-	return game
+	return i.demolish(game)
 }
 
 func (i interact) Apply(game objects.Game) objects.Game {

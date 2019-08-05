@@ -69,6 +69,18 @@ func (renderer *uiRenderer) debugMenu(state objects.Game) []objects.Renderable {
 		fmt.Sprintf("Mode: %d", state.Cursor.Mode),
 	}
 
+	for _, b := range state.Buildings {
+		if !b.Location.Equals(state.Cursor.Location) {
+			continue
+		}
+
+		texts = append(texts, fmt.Sprintf("Target Building: %s", &b))
+
+		for _, n := range b.Neighbors {
+			texts = append(texts, fmt.Sprintf("  - %s: %s", n.Direction, &n.Building))
+		}
+	}
+
 	for _, f := range state.Flashes {
 		texts = append(texts, fmt.Sprintf("- expiring %.2f", f.Expires.Sub(time.Now()).Seconds()))
 	}
