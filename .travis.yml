@@ -1,15 +1,13 @@
 dist: trusty
 language: go
-addons:
-  apt:
-    packages:
-      - libxcursor-dev
 go:
   - "1.12"
 jobs:
   include:
     - stage: "build"
       name: "build"
+      install:
+        - apt-get update
       script:
         - make
         - make lint
