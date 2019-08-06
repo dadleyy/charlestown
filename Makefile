@@ -1,6 +1,7 @@
 NAME=charlestown
 DIST=./dist
-EXE=$(DIST)/charlestown/bin/$(NAME)
+BIN_DIST=$(DIST)/charlestown/bin
+EXE=$(BIN_DIST)/$(NAME)
 VENDOR_MANIFEST=./vendor/modules.txt
 VENDOR_FLAGS=-v
 SRC=$(shell git ls-files | grep -e '\.go')
@@ -12,7 +13,8 @@ CYCLO_FLAGS=-over 25
 COVERPROFILE=./dist/tests/cover.out
 TEST_FLAGS=-v -count=1 -cover -covermode=set -benchmem -coverprofile=$(COVERPROFILE)
 
-OSX_BUNDLE_CONTENTS=$(DIST)/charlestown/osx/charlestown.app/Contents
+OSX_DIST=$(DIST)/charlestown/osx
+OSX_BUNDLE_CONTENTS=$(OSX_DIST)/charlestown.app/Contents
 OSX_BUNDLE=$(dir $(OSX_BUNDLE_CONTENTS))
 OSX_BUNDLE_SRC=$(wildcard ./auto/osx/*)
 
@@ -30,7 +32,7 @@ clean:
 	$(RM) $(dir $(EXE))
 	$(RM) $(dir $(VENDOR_MANIFEST))
 	$(RM) $(dir $(COVERPROFILE))
-	$(RM) $(dir $(OSX_BUNDLE))
+	$(RM) $(OSX_DIST)
 
 cleanall:
 	$(RM) $(DIST)

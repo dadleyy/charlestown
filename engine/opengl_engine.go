@@ -3,6 +3,7 @@ package engine
 import "fmt"
 import "log"
 import "time"
+import "sync"
 import "strings"
 import "runtime"
 import "github.com/go-gl/gl/v4.1-core/gl"
@@ -21,10 +22,17 @@ func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objec
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.UseProgram(program)
 
+	log.Printf("cursor location %s", &game.Cursor.Location)
+	x, y := game.Cursor.Location.Values()
+	width, height := game.World.Values()
+
+	px := float32(x) / float32(width)
+	py := float32(y) / float32(height)
+
 	triangle := []float32{
-		0, 0.5, 0, // top
-		-0.5, -0.5, 0, // left
-		0.5, -0.5, 0, // right
+		-0.5 + px, 0.0 + py, 0,
+		-0.5 + px, -0.5 + py, 0,
+		0.5 + px, -0.5 + py, 0,
 	}
 
 	vao := engine.makeVao(triangle)
@@ -80,7 +88,24 @@ func (engine *openGLEngine) initWindow() (*glfw.Window, error) {
 		return nil, e
 	}
 
-	glfw.WindowHint(glfw.Resizable, glfw.False)
+	monitors := glfw.GetMonitors()
+	primary := glfw.GetPrimaryMonitor()
+
+	for _, m := range monitors {
+		x, y := m.GetPos()
+
+		if primary == nil {
+			primary = m
+		}
+
+		if px, _ := primary.GetPos(); x < px {
+			primary = m
+		}
+
+		log.Printf("monitor (%d, %d): %s", x, y, m.GetName())
+	}
+
+	glfw.WindowHint(glfw.Resizable, glfw.True)
 	glfw.WindowHint(glfw.ContextVersionMajor, 4)
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
@@ -88,6 +113,11 @@ func (engine *openGLEngine) initWindow() (*glfw.Window, error) {
 
 	width, height := constants.DefaultWindowWidth, constants.DefaultWindowHeight
 	window, e := glfw.CreateWindow(width, height, constants.WindowName, nil, nil)
+
+	if primary != nil {
+		x, y := primary.GetPos()
+		window.SetPos(x, y)
+	}
 
 	if e != nil {
 		return nil, e
@@ -123,6 +153,7 @@ func (engine *openGLEngine) initOpenGL() (uint32, error) {
 }
 
 func (engine *openGLEngine) run(game objects.Game, updates <-chan mutations.Mutation) error {
+	runtime.LockOSThread()
 	log.Printf("[init] starting glfw")
 	window, e := engine.initWindow()
 
@@ -141,37 +172,70 @@ func (engine *openGLEngine) run(game objects.Game, updates <-chan mutations.Muta
 		return e
 	}
 
+	window.SetSizeCallback(func(w *glfw.Window, width, height int) {
+		log.Printf("received resize (%d x %d)", width, height)
+		game.Dimensions = objects.Dimensions{width, height}
+		engine.draw(window, prog, game)
+	})
+
+	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+		mut := mutations.Move(0, 0)
+
+		switch key {
+		case glfw.KeyW:
+			mut = mutations.Move(0, -1)
+		case glfw.KeyA:
+			mut = mutations.Move(-1, 0)
+		case glfw.KeyS:
+			mut = mutations.Move(0, 1)
+		case glfw.KeyD:
+			mut = mutations.Move(1, 0)
+		default:
+			log.Printf("received unknown mouse movement %v", key)
+		}
+
+		game = mut.Apply(game)
+		engine.draw(window, prog, game)
+	})
+
 	log.Printf("[init] starting runloop %v", time.Now())
-	now := time.Now()
 
 	width, height := window.GetSize()
 	log.Printf("setting initial size (%d, %d)", width, height)
 	game.Dimensions = objects.Dimensions{width, height}
 
+	wg := &sync.WaitGroup{}
+	quit := make(chan struct{})
+
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+		exit := false
+
+		for exit == false {
+			select {
+			case update := <-updates:
+				log.Printf("received update")
+				game = update.Apply(game)
+				glfw.PostEmptyEvent()
+			case <-quit:
+				exit = true
+			}
+		}
+
+		log.Printf("finished update loop")
+	}()
+
 	for !window.ShouldClose() {
-		select {
-		case update := <-updates:
-			log.Printf("applying update %v", update)
-			game = update.Apply(game)
-		default:
-			glfw.PollEvents()
-		}
-
-		dt := time.Now().Sub(now)
-
-		if dt.Seconds() > constants.IdleDelay.Seconds() {
-			game.Frame++
-			log.Printf("scheduling draw: %.2f", dt.Seconds())
-			engine.draw(window, prog, game)
-			now = time.Now()
-		}
+		engine.draw(window, prog, game)
+		glfw.WaitEvents()
 	}
 
+	quit <- struct{}{}
 	log.Printf("runloop terminated %v", time.Now())
 	return nil
 }
 
 func newOpenGLEngine(config Configuration, loader resources.Loader) engine {
-	runtime.LockOSThread()
 	return &openGLEngine{loader: loader}
 }

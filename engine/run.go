@@ -57,7 +57,7 @@ func Run(config Configuration) error {
 	world := objects.Dimensions{120, 40}
 
 	cursor := objects.Cursor{
-		Location: objects.Point{world.Width / 2, world.Height / 4},
+		Location: objects.Point{0, 0},
 	}
 
 	state := objects.Game{
@@ -102,19 +102,17 @@ func Run(config Configuration) error {
 	log.Printf("[init] starting timing dispatcher")
 	go dispatch.start(stop, wg)
 
-	if e := instance.run(state, updates); e != nil {
-		stop <- struct{}{}
-		wg.Wait()
-		log.Printf("[shutdown] error during runloop: %s", e)
-		return e
-	}
+	shutdown := instance.run(state, updates)
 
-	log.Printf("[shutdown] runloop terminated, sending stop signal")
-	go func() { stop <- struct{}{} }()
+	log.Printf("[shutdown] sending stop signal to timers")
+	stop <- struct{}{}
+
+	log.Printf("[shutdown] closing update channel")
+	close(updates)
 
 	log.Printf("[shutdown] stop signal sent, waiting for wait group")
 	wg.Wait()
 
 	log.Printf("[shutdown] complete")
-	return nil
+	return shutdown
 }
