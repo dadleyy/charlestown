@@ -1,5 +1,6 @@
 dist: trusty
 language: go
+sudo: true
 go:
   - "1.12"
 jobs:

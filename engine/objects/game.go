@@ -21,9 +21,10 @@ type Game struct {
 // String returns a user readable version of the game.
 func (state Game) String() string {
 	return fmt.Sprintf(
-		"<world %s | window %s | cursor %s>",
+		"<world %s | window %s | cursor %s | buildings %d>",
 		state.World,
 		state.Dimensions,
 		state.Cursor,
+		len(state.Buildings),
 	)
 }

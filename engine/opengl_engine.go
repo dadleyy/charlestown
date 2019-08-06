@@ -152,6 +152,31 @@ func (engine *openGLEngine) initOpenGL() (uint32, error) {
 	return prog, nil
 }
 
+func (engine *openGLEngine) mutationForKey(key glfw.Key, action glfw.Action) mutations.Mutation {
+	mut := mutations.Move(0, 0)
+	switch key {
+	case glfw.KeyW:
+		mut = mutations.Move(0, -1)
+	case glfw.KeyA:
+		mut = mutations.Move(-1, 0)
+	case glfw.KeyS:
+		mut = mutations.Move(0, 1)
+	case glfw.KeyD:
+		mut = mutations.Move(1, 0)
+	case glfw.KeyTab:
+		if action == glfw.Press {
+			mut = mutations.Mode()
+		}
+	case glfw.KeyEnter:
+		if action == glfw.Press {
+			mut = mutations.Interact()
+		}
+	default:
+		log.Printf("received unknown key movement %v", key)
+	}
+	return mut
+}
+
 func (engine *openGLEngine) run(game objects.Game, updates <-chan mutations.Mutation) error {
 	runtime.LockOSThread()
 	log.Printf("[init] starting glfw")
@@ -179,25 +204,7 @@ func (engine *openGLEngine) run(game objects.Game, updates <-chan mutations.Muta
 	})
 
 	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-		mut := mutations.Move(0, 0)
-
-		switch key {
-		case glfw.KeyW:
-			mut = mutations.Move(0, -1)
-		case glfw.KeyA:
-			mut = mutations.Move(-1, 0)
-		case glfw.KeyS:
-			mut = mutations.Move(0, 1)
-		case glfw.KeyD:
-			mut = mutations.Move(1, 0)
-		case glfw.KeyTab:
-			if action == glfw.Press {
-				mut = mutations.Mode()
-			}
-		default:
-			log.Printf("received unknown key movement %v", key)
-		}
-
+		mut := engine.mutationForKey(key, action)
 		game = mut.Apply(game)
 		engine.draw(window, prog, game)
 	})
