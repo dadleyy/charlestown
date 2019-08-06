@@ -3,10 +3,14 @@ package engine
 import "os"
 import "io"
 import "log"
+import "fmt"
 import "time"
+import "sync"
 import "path/filepath"
 import "github.com/dadleyy/charlestown/engine/objects"
+import "github.com/dadleyy/charlestown/engine/mutations"
 import "github.com/dadleyy/charlestown/engine/constants"
+import "github.com/dadleyy/charlestown/engine/resources"
 
 // Run creates and loops the game engine, mostly used to prepare the logger.
 func Run(config Configuration) error {
@@ -16,6 +20,10 @@ func Run(config Configuration) error {
 		return e
 	}
 
+	if len(wd) == 1 && wd[0] == os.PathSeparator {
+		wd = filepath.Join(os.Getenv("HOME"), ".charles-town")
+	}
+
 	logdir := filepath.Dir(config.Logging.Filename)
 
 	if !filepath.IsAbs(logdir) {
@@ -23,7 +31,7 @@ func Run(config Configuration) error {
 	}
 
 	if e := os.MkdirAll(logdir, os.ModePerm); e != nil {
-		return e
+		return fmt.Errorf("mkdirall fail on '%s' (working dir %s): %s", logdir, wd, e)
 	}
 
 	flags := os.O_RDWR | os.O_CREATE
@@ -51,6 +59,7 @@ func Run(config Configuration) error {
 	cursor := objects.Cursor{
 		Location: objects.Point{world.Width / 2, world.Height / 4},
 	}
+
 	state := objects.Game{
 		World:  world,
 		Cursor: cursor,
@@ -61,11 +70,51 @@ func Run(config Configuration) error {
 		},
 	}
 
-	instance := newTcellEngine(config)
+	log.Printf("[init] creating mutations channel")
+	// Create a channel with our stream of mutations.
+	updates := make(chan mutations.Mutation, 10)
 
-	if true {
-		instance = newOpenGLEngine(config)
+	// Create a stop channel for our timing dispatcher.
+	stop := make(chan struct{})
+	wg := &sync.WaitGroup{}
+
+	log.Printf("[init] creating timing dispatcher")
+	// Create the timing dispatcher that will send updates to our engine.
+	dispatch := &timingDispatcher{
+		updates: updates,
+		mutators: []mutator{
+			&economyMutator{},
+			&flashMutator{},
+			&turnMutator{},
+		},
 	}
 
-	return instance.run(state)
+	log.Printf("[init] creating resource loader")
+	loader, e := resources.NewFilesystemLoader(config.AssetPath)
+
+	if e != nil {
+		return e
+	}
+
+	log.Printf("[init] creating engine")
+	instance := newOpenGLEngine(config, loader)
+
+	log.Printf("[init] starting timing dispatcher")
+	go dispatch.start(stop, wg)
+
+	if e := instance.run(state, updates); e != nil {
+		stop <- struct{}{}
+		wg.Wait()
+		log.Printf("[shutdown] error during runloop: %s", e)
+		return e
+	}
+
+	log.Printf("[shutdown] runloop terminated, sending stop signal")
+	go func() { stop <- struct{}{} }()
+
+	log.Printf("[shutdown] stop signal sent, waiting for wait group")
+	wg.Wait()
+
+	log.Printf("[shutdown] complete")
+	return nil
 }

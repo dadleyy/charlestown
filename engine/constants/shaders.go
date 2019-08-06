@@ -1,6 +1,7 @@
 package constants
 
 const (
+	// VertexShaderSource is a shader.
 	VertexShaderSource = `
     #version 410
     in vec3 vp;
@@ -9,6 +10,7 @@ const (
     }
 ` + "\x00"
 
+	// FragmentShaderSource shades things in white.
 	FragmentShaderSource = `
     #version 410
     out vec4 frag_colour;

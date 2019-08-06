@@ -2,17 +2,22 @@ package engine
 
 import "fmt"
 import "log"
+import "time"
 import "strings"
 import "runtime"
 import "github.com/go-gl/gl/v4.1-core/gl"
 import "github.com/go-gl/glfw/v3.2/glfw"
 import "github.com/dadleyy/charlestown/engine/objects"
 import "github.com/dadleyy/charlestown/engine/constants"
+import "github.com/dadleyy/charlestown/engine/mutations"
+import "github.com/dadleyy/charlestown/engine/resources"
 
 type openGLEngine struct {
+	config Configuration
+	loader resources.Loader
 }
 
-func (engine *openGLEngine) draw(window *glfw.Window, program uint32) error {
+func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objects.Game) error {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.UseProgram(program)
 
@@ -26,7 +31,6 @@ func (engine *openGLEngine) draw(window *glfw.Window, program uint32) error {
 	gl.BindVertexArray(vao)
 	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
 
-	glfw.PollEvents()
 	window.SwapBuffers()
 	return nil
 }
@@ -71,8 +75,9 @@ func (engine *openGLEngine) makeVao(points []float32) uint32 {
 }
 
 func (engine *openGLEngine) initWindow() (*glfw.Window, error) {
-	if err := glfw.Init(); err != nil {
-		return nil, err
+	if e := glfw.Init(); e != nil {
+		log.Printf("[error] unable to initialize glfw: %s", e)
+		return nil, e
 	}
 
 	glfw.WindowHint(glfw.Resizable, glfw.False)
@@ -117,32 +122,56 @@ func (engine *openGLEngine) initOpenGL() (uint32, error) {
 	return prog, nil
 }
 
-func (engine *openGLEngine) run(state objects.Game) error {
-	runtime.LockOSThread()
-
+func (engine *openGLEngine) run(game objects.Game, updates <-chan mutations.Mutation) error {
 	log.Printf("[init] starting glfw")
 	window, e := engine.initWindow()
 
 	if e != nil {
+		log.Printf("[error] unable to initialize window: %s", e)
 		return e
 	}
 
 	defer glfw.Terminate()
 
+	log.Printf("[init] starting opengl")
 	prog, e := engine.initOpenGL()
 
 	if e != nil {
+		log.Printf("[error] unable to initialize opengl: %s", e)
 		return e
 	}
 
-	log.Printf("[init] starting runloop")
+	log.Printf("[init] starting runloop %v", time.Now())
+	now := time.Now()
+
+	width, height := window.GetSize()
+	log.Printf("setting initial size (%d, %d)", width, height)
+	game.Dimensions = objects.Dimensions{width, height}
+
 	for !window.ShouldClose() {
-		engine.draw(window, prog)
+		select {
+		case update := <-updates:
+			log.Printf("applying update %v", update)
+			game = update.Apply(game)
+		default:
+			glfw.PollEvents()
+		}
+
+		dt := time.Now().Sub(now)
+
+		if dt.Seconds() > constants.IdleDelay.Seconds() {
+			game.Frame++
+			log.Printf("scheduling draw: %.2f", dt.Seconds())
+			engine.draw(window, prog, game)
+			now = time.Now()
+		}
 	}
 
+	log.Printf("runloop terminated %v", time.Now())
 	return nil
 }
 
-func newOpenGLEngine(config Configuration) engine {
-	return &openGLEngine{}
+func newOpenGLEngine(config Configuration, loader resources.Loader) engine {
+	runtime.LockOSThread()
+	return &openGLEngine{loader: loader}
 }

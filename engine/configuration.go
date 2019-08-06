@@ -6,4 +6,5 @@ type Configuration struct {
 		Filename string
 		Truncate bool
 	}
+	AssetPath string
 }

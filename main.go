@@ -15,6 +15,7 @@ func main() {
 
 	options.Usage = func() {}
 
+	options.StringVar(&config.AssetPath, "assets", "assets", "a filepath for where the image assets are.")
 	options.StringVar(&config.Logging.Filename, "logfile", "log/charlestown.log", "decide where the logs go.")
 	options.BoolVar(&config.Logging.Truncate, "truncate-log", true, "truncate the log file when opening.")
 	options.BoolVar(&printVersion, "version", false, "print the version number.")

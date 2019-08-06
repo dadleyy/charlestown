@@ -1,5 +1,6 @@
 package engine
 
+import "log"
 import "sync"
 import "time"
 import "github.com/dadleyy/charlestown/engine/mutations"
@@ -15,11 +16,14 @@ func (dispatch *timingDispatcher) start(kill <-chan struct{}, wg *sync.WaitGroup
 
 	timer := time.Tick(time.Millisecond * 100)
 
+	log.Printf("entering loop")
+
 	for {
 		last := time.Now()
 
 		select {
 		case <-kill:
+			log.Printf("kill signal received, exiting")
 			return
 		case t := <-timer:
 			dt := t.Sub(last)
@@ -33,4 +37,6 @@ func (dispatch *timingDispatcher) start(kill <-chan struct{}, wg *sync.WaitGroup
 			}
 		}
 	}
+
+	log.Printf("dispatcher shuttiung down")
 }

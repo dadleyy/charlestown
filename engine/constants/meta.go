@@ -4,7 +4,10 @@ package constants
 var AppVersion = "development"
 
 const (
+	// DefaultWindowHeight is the window height we'd like when opening the application.
 	DefaultWindowHeight = 400
-	DefaultWindowWidth  = 600
-	WindowName          = "Charlestown"
+	// DefaultWindowWidth is the window width we'd like when opening the application.
+	DefaultWindowWidth = 600
+	// WindowName is the title we want on the window.
+	WindowName = "Charlestown"
 )
