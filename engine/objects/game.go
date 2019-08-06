@@ -19,6 +19,11 @@ type Game struct {
 }
 
 // String returns a user readable version of the game.
-func (state *Game) String() string {
-	return fmt.Sprintf("<world %s | window %s | cursor %s>", &state.World, &state.Dimensions, &state.Cursor.Location)
+func (state Game) String() string {
+	return fmt.Sprintf(
+		"<world %s | window %s | cursor %s>",
+		state.World,
+		state.Dimensions,
+		state.Cursor,
+	)
 }

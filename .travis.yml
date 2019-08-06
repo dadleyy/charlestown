@@ -1,12 +1,9 @@
 dist: trusty
+language: go
 addons:
-  postgresql: "9.6"
   apt:
     packages:
       - libxcursor-dev
-language: go
-services:
-  - postgresql
 go:
   - "1.12"
 jobs:

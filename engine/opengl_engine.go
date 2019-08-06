@@ -22,7 +22,7 @@ func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objec
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.UseProgram(program)
 
-	log.Printf("cursor location %s", &game.Cursor.Location)
+	log.Printf("game info: %s", game)
 	x, y := game.Cursor.Location.Values()
 	width, height := game.World.Values()
 
@@ -190,8 +190,12 @@ func (engine *openGLEngine) run(game objects.Game, updates <-chan mutations.Muta
 			mut = mutations.Move(0, 1)
 		case glfw.KeyD:
 			mut = mutations.Move(1, 0)
+		case glfw.KeyTab:
+			if action == glfw.Press {
+				mut = mutations.Mode()
+			}
 		default:
-			log.Printf("received unknown mouse movement %v", key)
+			log.Printf("received unknown key movement %v", key)
 		}
 
 		game = mut.Apply(game)
@@ -223,7 +227,7 @@ func (engine *openGLEngine) run(game objects.Game, updates <-chan mutations.Muta
 			}
 		}
 
-		log.Printf("finished update loop")
+		log.Printf("[shutdown] finished update loop")
 	}()
 
 	for !window.ShouldClose() {
@@ -232,7 +236,8 @@ func (engine *openGLEngine) run(game objects.Game, updates <-chan mutations.Muta
 	}
 
 	quit <- struct{}{}
-	log.Printf("runloop terminated %v", time.Now())
+	log.Printf("[shutdown] runloop terminated %v", time.Now())
+	wg.Wait()
 	return nil
 }
 
