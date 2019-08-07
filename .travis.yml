@@ -9,17 +9,16 @@ jobs:
   include:
     - stage: "build"
       name: "build"
-      install:
+      script:
         - sudo apt-get update
         - sudo apt-get install -y libgl1-mesa-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev
-      script:
         - make
         - make lint
         - make test
-    - stage: "deploy"
-      script: echo "todo"
+    - stage: "bundle"
+      script: echo "bundle"
+      env:
+        - GOOS=darwin
 stages:
   - "build"
   - "bundle"
-  - name: "deploy"
-    if: env(GOOS) = darwin
