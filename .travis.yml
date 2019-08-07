@@ -5,9 +5,9 @@ go:
 env:
   - GOOS=linux GOARCH=amd64 GO111MODULE=on
   - GOOS=darwin GOARCH=amd64 GO111MODULE=on
-install:
+install: &install
   - sudo apt-get update
-  - sudo apt-get install -y libgl1-mesa-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev
+  - sudo apt-get install -y libgl1-mesa-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev xsltproc
 script:
   - make
   - make lint
@@ -15,9 +15,7 @@ script:
 jobs:
   include:
     - stage: "bundle"
-      install:
-        - sudo apt-get update
-        - sudo apt-get install -y libgl1-mesa-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev
+      install: *install
       script:
         - make release
       deploy:
