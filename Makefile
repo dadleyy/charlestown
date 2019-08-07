@@ -7,7 +7,8 @@ VENDOR_FLAGS=-v
 SRC=$(shell git ls-files | grep -e '\.go')
 GO=go
 RM=rm -rf
-LDFLAGS="-s -w -X github.com/dadleyy/charlestown/engine/constants.AppVersion=$(shell ./auto/git-version.sh)"
+VERSION=$(shell ./auto/git-version.sh)
+LDFLAGS="-s -w -X github.com/dadleyy/charlestown/engine/constants.AppVersion=$(VERSION)"
 BUILD_FLAGS=-x -v -ldflags $(LDFLAGS)
 CYCLO_FLAGS=-over 25
 COVERPROFILE=./dist/tests/cover.out
@@ -17,6 +18,11 @@ OSX_DIST=$(DIST)/charlestown/osx
 OSX_BUNDLE_CONTENTS=$(OSX_DIST)/charlestown.app/Contents
 OSX_BUNDLE=$(dir $(OSX_BUNDLE_CONTENTS))
 OSX_BUNDLE_SRC=$(wildcard ./auto/osx/*)
+OSX_BUNDLE_ASSETS=$(wildcard ./assets/osx/*)
+OSX_PLIST_ARTIFACT=$(OSX_BUNDLE_CONTENTS)/Info.plist
+OSX_PLIST_FLAGS=--stringparam version $(VERSION)
+OSX_PLIST_SOURCE=./auto/osx/plist-source.xml
+OSX_PLIST_XSLT=./auto/osx/plist-transform.xslt
 
 .PHONY: all test clean osx
 
@@ -66,9 +72,14 @@ $(EXE): $(SRC) $(VENDOR_MANIFEST)
 	@echo "[charlestown] building"
 	$(GO) build -o $(EXE) $(BUILD_FLAGS)
 
-$(OSX_BUNDLE): $(EXE) $(OSX_BUNDLE_SRC)
-	@echo "[charlestown] building osx bundle $(OSX_BUNDLE_SRC)"
+$(OSX_BUNDLE): $(EXE) $(OSX_PLIST_ARTIFACT) $(OSX_BUNDLE_ASSETS)
+	@echo "[charlestown] building osx bundle"
+	cp $(EXE) $(OSX_BUNDLE_CONTENTS)/MacOS/
+	cp -r $(dir $(OSX_BUNDLE_ASSETS))* "$(OSX_BUNDLE_CONTENTS)/Resources/"
+
+$(OSX_PLIST_ARTIFACT): $(OSX_PLIST_XSLT) $(OSX_PLIST_SOURCE)
+	@echo "[charlestown] building osx plist file"
 	mkdir -p $(OSX_BUNDLE_CONTENTS)
 	mkdir -p $(OSX_BUNDLE_CONTENTS)/MacOS
-	cp $(EXE) $(OSX_BUNDLE_CONTENTS)/MacOS/
-	cp -r $(dir $(OSX_BUNDLE_SRC))* "$(OSX_BUNDLE_CONTENTS)/"
+	mkdir -p $(OSX_BUNDLE_CONTENTS)/Resources
+	xsltproc $(OSX_PLIST_FLAGS) -o $(OSX_PLIST_ARTIFACT) $(OSX_PLIST_XSLT) $(OSX_PLIST_SOURCE)
