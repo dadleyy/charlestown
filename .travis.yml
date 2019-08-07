@@ -5,20 +5,18 @@ go:
 env:
   - GOOS=linux GOARCH=amd64 GO111MODULE=on
   - GOOS=darwin GOARCH=amd64 GO111MODULE=on
+script:
+  - sudo apt-get update
+  - sudo apt-get install -y libgl1-mesa-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev
+  - make
+  - make lint
+  - make test
 jobs:
   include:
-    - stage: "build"
-      name: "build"
-      script:
-        - sudo apt-get update
-        - sudo apt-get install -y libgl1-mesa-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev
-        - make
-        - make lint
-        - make test
     - stage: "bundle"
       script: echo "bundle"
       env:
         - GOOS=darwin
 stages:
-  - "build"
+  - "test"
   - "bundle"
