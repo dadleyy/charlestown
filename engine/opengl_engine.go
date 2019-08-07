@@ -2,7 +2,6 @@ package engine
 
 import "fmt"
 import "log"
-import "time"
 import "sync"
 import "strings"
 import "runtime"
@@ -213,15 +212,14 @@ func (engine *openGLEngine) run(game objects.Game, updates <-chan mutations.Muta
 		engine.draw(window, prog, game)
 	})
 
-	log.Printf("[init] starting runloop %v", time.Now())
-
 	width, height := window.GetSize()
-	log.Printf("setting initial size (%d, %d)", width, height)
+	log.Printf("[init] setting initial size (%d, %d)", width, height)
 	game.Dimensions = objects.Dimensions{width, height}
 
 	wg := &sync.WaitGroup{}
 	quit := make(chan struct{})
 
+	log.Printf("[init] starting update consumer")
 	go func() {
 		wg.Add(1)
 		defer wg.Done()
@@ -241,13 +239,14 @@ func (engine *openGLEngine) run(game objects.Game, updates <-chan mutations.Muta
 		log.Printf("[shutdown] finished update loop")
 	}()
 
+	log.Printf("[init] starting runloop")
 	for !window.ShouldClose() {
 		engine.draw(window, prog, game)
 		glfw.WaitEvents()
 	}
 
 	quit <- struct{}{}
-	log.Printf("[shutdown] runloop terminated %v", time.Now())
+	log.Printf("[shutdown] runloop terminated")
 	wg.Wait()
 	return nil
 }
