@@ -1,6 +1,5 @@
 dist: trusty
 language: go
-sudo: true
 go:
   - "1.12"
 jobs:
@@ -8,7 +7,7 @@ jobs:
     - stage: "build"
       name: "build"
       install:
-        - apt-get update
+        - sudo apt-get update
       script:
         - make
         - make lint
