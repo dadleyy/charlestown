@@ -13,6 +13,7 @@ BUILD_FLAGS=-x -v -ldflags $(LDFLAGS)
 CYCLO_FLAGS=-over 25
 COVERPROFILE=./dist/tests/cover.out
 TEST_FLAGS=-v -count=1 -cover -covermode=set -benchmem -coverprofile=$(COVERPROFILE)
+TARBALL=./dist/charlestown.tar.gz
 
 OSX_DIST=$(DIST)/charlestown/osx
 OSX_BUNDLE_CONTENTS=$(OSX_DIST)/charlestown.app/Contents
@@ -24,7 +25,7 @@ OSX_PLIST_FLAGS=--stringparam version $(VERSION)
 OSX_PLIST_SOURCE=./auto/osx/plist-source.xml
 OSX_PLIST_XSLT=./auto/osx/plist-transform.xslt
 
-.PHONY: all test clean osx
+.PHONY: all test clean osx artifact
 
 all: $(EXE)
 
@@ -39,9 +40,12 @@ clean:
 	$(RM) $(dir $(VENDOR_MANIFEST))
 	$(RM) $(dir $(COVERPROFILE))
 	$(RM) $(OSX_DIST)
+	$(RM) $(TARBALL)
 
 cleanall:
 	$(RM) $(DIST)
+
+tar: $(TARBALL)
 
 $(VENDOR_MANIFEST): go.mod go.sum
 	@echo "[charlestown] building vendor dir"
@@ -83,3 +87,7 @@ $(OSX_PLIST_ARTIFACT): $(OSX_PLIST_XSLT) $(OSX_PLIST_SOURCE)
 	mkdir -p $(OSX_BUNDLE_CONTENTS)/MacOS
 	mkdir -p $(OSX_BUNDLE_CONTENTS)/Resources
 	xsltproc $(OSX_PLIST_FLAGS) -o $(OSX_PLIST_ARTIFACT) $(OSX_PLIST_XSLT) $(OSX_PLIST_SOURCE)
+
+$(TARBALL): $(EXE)
+	@echo "[charlestown] creating tarball"
+	tar -cvzf $(TARBALL) -C ./dist charlestown

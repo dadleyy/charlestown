@@ -1,5 +1,10 @@
 dist: trusty
 language: go
+addons:
+  artifacts:
+    debug: true
+    paths:
+      - ./dist/charlestown/bin/
 go:
   - "1.12"
 env:
@@ -14,7 +19,8 @@ script:
 jobs:
   include:
     - stage: "bundle"
-      script: echo "bundle"
+      script:
+        - make tar
       env:
         - GOOS=darwin
 stages:
