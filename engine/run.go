@@ -57,7 +57,7 @@ func Run(config Configuration) error {
 	world := objects.Dimensions{120, 40}
 
 	cursor := objects.Cursor{
-		Location: objects.Point{0, 0},
+		Location: objects.Point{1, 1},
 	}
 
 	state := objects.Game{

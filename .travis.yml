@@ -17,6 +17,7 @@ jobs:
     - stage: "bundle"
       install: *install
       script:
+        - echo $GOOS
         - make release
       deploy:
         provider: s3
