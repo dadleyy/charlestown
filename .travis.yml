@@ -1,10 +1,14 @@
 dist: trusty
 language: go
-addons:
-  artifacts:
-    debug: true
-    paths:
-      - ./dist/charlestown/bin/
+deploy:
+  provider: s3
+  skip_cleanup: true
+  file:
+    - ./dist/charlestown.tar.gz
+  on:
+    env:
+      - GO111MODULE=on
+      - GOOS=darwin
 go:
   - "1.12"
 env:
@@ -19,6 +23,9 @@ script:
 jobs:
   include:
     - stage: "bundle"
+      install:
+        - sudo apt-get update
+        - sudo apt-get install -y libgl1-mesa-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev
       script:
         - make tar
       env:
