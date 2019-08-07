@@ -30,8 +30,12 @@ func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objec
 	py := float32(y) / float32(height)
 
 	triangle := []float32{
-		-0.5 + px, 0.0 - py, 0,
+		-0.5 + px, 0.5 - py, 0,
 		-0.5 + px, -0.5 - py, 0,
+		0.5 + px, -0.5 - py, 0,
+
+		-0.5 + px, 0.5 - py, 0,
+		0.5 + px, 0.5 - py, 0,
 		0.5 + px, -0.5 - py, 0,
 	}
 
