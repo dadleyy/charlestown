@@ -6,9 +6,7 @@ deploy:
   file:
     - ./dist/charlestown.tar.gz
   on:
-    env:
-      - GO111MODULE=on
-      - GOOS=darwin
+    condition: "$GOOS = darwin"
 go:
   - "1.12"
 env:
