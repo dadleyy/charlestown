@@ -13,9 +13,9 @@ BUILD_FLAGS=-x -v -ldflags $(LDFLAGS)
 CYCLO_FLAGS=-over 25
 COVERPROFILE=./dist/tests/cover.out
 TEST_FLAGS=-v -count=1 -cover -covermode=set -benchmem -coverprofile=$(COVERPROFILE)
-TARBALL=./dist/charlestown.tar.gz
+TARBALL=./dist/artifacts/charlestown-$(shell go env GOOS)-$(shell go env GOARCH)-$(VERSION).tar.gz
 
-OSX_DIST=$(DIST)/charlestown/osx
+OSX_DIST=$(DIST)/osx
 OSX_BUNDLE_CONTENTS=$(OSX_DIST)/charlestown.app/Contents
 OSX_BUNDLE=$(dir $(OSX_BUNDLE_CONTENTS))
 OSX_BUNDLE_SRC=$(wildcard ./auto/osx/*)
@@ -24,6 +24,7 @@ OSX_PLIST_ARTIFACT=$(OSX_BUNDLE_CONTENTS)/Info.plist
 OSX_PLIST_FLAGS=--stringparam version $(VERSION)
 OSX_PLIST_SOURCE=./auto/osx/plist-source.xml
 OSX_PLIST_XSLT=./auto/osx/plist-transform.xslt
+OSX_TARBALL=./dist/artifacts/charlestown-$(shell go env GOOS)-$(shell go env GOARCH)-$(VERSION).app.tar.gz
 
 .PHONY: all test clean osx artifact
 
@@ -41,11 +42,12 @@ clean:
 	$(RM) $(dir $(COVERPROFILE))
 	$(RM) $(OSX_DIST)
 	$(RM) $(TARBALL)
+	$(RM) $(OSX_TARBALL)
 
 cleanall:
 	$(RM) $(DIST)
 
-tar: $(TARBALL)
+release: $(TARBALL) $(OSX_BUNDLE)
 
 $(VENDOR_MANIFEST): go.mod go.sum
 	@echo "[charlestown] building vendor dir"
@@ -80,6 +82,7 @@ $(OSX_BUNDLE): $(EXE) $(OSX_PLIST_ARTIFACT) $(OSX_BUNDLE_ASSETS)
 	@echo "[charlestown] building osx bundle"
 	cp $(EXE) $(OSX_BUNDLE_CONTENTS)/MacOS/
 	cp -r $(dir $(OSX_BUNDLE_ASSETS))* "$(OSX_BUNDLE_CONTENTS)/Resources/"
+	tar -cvzf $(OSX_TARBALL) -C ./dist/osx charlestown.app
 
 $(OSX_PLIST_ARTIFACT): $(OSX_PLIST_XSLT) $(OSX_PLIST_SOURCE)
 	@echo "[charlestown] building osx plist file"
@@ -90,4 +93,5 @@ $(OSX_PLIST_ARTIFACT): $(OSX_PLIST_XSLT) $(OSX_PLIST_SOURCE)
 
 $(TARBALL): $(EXE)
 	@echo "[charlestown] creating tarball"
+	mkdir -p $(dir $(TARBALL))
 	tar -cvzf $(TARBALL) -C ./dist charlestown

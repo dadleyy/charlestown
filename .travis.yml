@@ -19,12 +19,14 @@ jobs:
         - sudo apt-get update
         - sudo apt-get install -y libgl1-mesa-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev
       script:
-        - make tar
+        - make release
       deploy:
         provider: s3
         skip_cleanup: true
-        file:
-          - ./dist/charlestown.tar.gz
+        file: ./dist/artifacts/*.tar.gz
+        on:
+          all_branches: true
+          condition: $GOOS == darwin
       env:
         - GO111MODULE=on
         - GOOS=darwin
