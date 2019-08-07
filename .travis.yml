@@ -24,7 +24,7 @@ jobs:
         file: ./dist/artifacts/*.tar.gz
         on:
           all_branches: true
-          condition: $GOOS == darwin
+          condition: $GOOS = "darwin"
       env:
         - GO111MODULE=on
         - GOOS=darwin
