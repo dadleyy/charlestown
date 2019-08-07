@@ -1,12 +1,5 @@
 dist: trusty
 language: go
-deploy:
-  provider: s3
-  skip_cleanup: true
-  file:
-    - ./dist/charlestown.tar.gz
-  on:
-    condition: "$GOOS = darwin"
 go:
   - "1.12"
 env:
@@ -27,6 +20,11 @@ jobs:
         - sudo apt-get install -y libgl1-mesa-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev
       script:
         - make tar
+      deploy:
+        provider: s3
+        skip_cleanup: true
+        file:
+          - ./dist/charlestown.tar.gz
       env:
         - GO111MODULE=on
         - GOOS=darwin
