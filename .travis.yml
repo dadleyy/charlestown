@@ -2,9 +2,10 @@ dist: trusty
 language: go
 go:
   - "1.12"
+  - "1.11"
 env:
-  - GOOS=linux GOARCH=amd64
-  - GOOS=darwin GOARCH=amd64
+  - GOOS=linux GOARCH=amd64 GO111MODULE=on
+  - GOOS=darwin GOARCH=amd64 GO111MODULE=on
 jobs:
   include:
     - stage: "build"
@@ -23,6 +24,3 @@ stages:
   - "bundle"
   - name: "deploy"
     if: branch = master
-env:
-  global:
-    - GO111MODULE=on
