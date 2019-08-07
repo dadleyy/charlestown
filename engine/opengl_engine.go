@@ -20,29 +20,77 @@ type openGLEngine struct {
 func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objects.Game) error {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.UseProgram(program)
+	defer window.SwapBuffers()
 
-	log.Printf("game info: %s", game)
 	x, y := game.Cursor.Location.Values()
 	width, height := game.World.Values()
+	dx, dy := game.Dimensions.Values()
 
+	if width == 0 || height == 0 {
+		return nil
+	}
+
+	mx := (1.0 / (float32(dx) / 600))
+	my := (1.0 / (float32(dy) / 400))
 	px := float32(x) / float32(width)
 	py := float32(y) / float32(height)
 
-	triangle := []float32{
-		-0.5 + px, 0.5 - py, 0,
-		-0.5 + px, -0.5 - py, 0,
-		0.5 + px, -0.5 - py, 0,
+	// Draw the wall(s)
+	borders := []float32{
+		// top
+		-px, py, 0.0,
+		1.0 - px, py, 0.0,
 
-		-0.5 + px, 0.5 - py, 0,
-		0.5 + px, 0.5 - py, 0,
-		0.5 + px, -0.5 - py, 0,
+		// bottom
+		-px, py - 1.0, 0.0,
+		1.0 - px, py - 1.0, 0.0,
+
+		// left
+		-px, py, 0.0,
+		-px, py - 1.0, 0.0,
+
+		// right
+		1.0 - px, py, 0.0,
+		1.0 - px, py - 1.0, 0.0,
 	}
+	gl.BindVertexArray(engine.makeVao(borders))
+	gl.DrawArrays(gl.LINES, 0, int32(len(borders)/3))
 
-	vao := engine.makeVao(triangle)
-	gl.BindVertexArray(vao)
-	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
+	cursorWidth := float32((0.05 * mx) * 0.5)
+	cursorHeight := float32((0.05 * my) * 0.5)
 
-	window.SwapBuffers()
+	gl.BindVertexArray(engine.makeVao([]float32{
+		-cursorWidth, cursorHeight, 0.0,
+		-cursorWidth, -cursorHeight, 0.0,
+		cursorWidth, -cursorHeight, 0.0,
+
+		-cursorWidth, cursorHeight, 0.0,
+		cursorWidth, cursorHeight, 0.0,
+		cursorWidth, -cursorHeight, 0.0,
+		/*
+			0.0, 0.0, 0.0,
+			0.0, 0.0, 0.0,
+			0.0, 0.0, 0.0,
+		*/
+	}))
+	gl.DrawArrays(gl.TRIANGLES, 0, 6)
+
+	/*
+		triangle := []float32{
+			-0.5 + px, 0.5 - py, 0,
+			-0.5 + px, -0.5 - py, 0,
+			0.5 + px, -0.5 - py, 0,
+
+			-0.5 + px, 0.5 - py, 0,
+			0.5 + px, 0.5 - py, 0,
+			0.5 + px, -0.5 - py, 0,
+		}
+
+		vao := engine.makeVao(triangle)
+		gl.BindVertexArray(vao)
+		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
+	*/
+
 	return nil
 }
 
@@ -155,6 +203,7 @@ func (engine *openGLEngine) initOpenGL() (uint32, error) {
 	return prog, nil
 }
 
+// mutationForKey returns a mutation to be applied to the game based on a keyboard interaction.
 func (engine *openGLEngine) mutationForKey(key glfw.Key, action glfw.Action) mutations.Mutation {
 	mut := mutations.Move(0, 0)
 	switch key {
@@ -180,6 +229,7 @@ func (engine *openGLEngine) mutationForKey(key glfw.Key, action glfw.Action) mut
 	return mut
 }
 
+// run initializes openl, glfw and registers the appropriate input callbacks + mutation loop.
 func (engine *openGLEngine) run(game objects.Game, updates <-chan mutations.Mutation) error {
 	runtime.LockOSThread()
 	log.Printf("[init] starting glfw")
@@ -201,7 +251,8 @@ func (engine *openGLEngine) run(game objects.Game, updates <-chan mutations.Muta
 	}
 
 	window.SetSizeCallback(func(w *glfw.Window, width, height int) {
-		log.Printf("received resize (%d x %d)", width, height)
+		modifier := (1.0 / (float32(width) / 600))
+		log.Printf("received resize (%d x %d) [%.2f]", width, height, modifier)
 		game.Dimensions = objects.Dimensions{width, height}
 		engine.draw(window, prog, game)
 	})
