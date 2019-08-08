@@ -7,9 +7,14 @@ env:
 os:
   - linux
   - osx
+before_install: &before_install
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update; fi
 install: &install
-  - sudo apt-get update
-  - sudo apt-get install -y libgl1-mesa-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev xsltproc
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libgl1-mesa-dev; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libxcursor-dev; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libxrandr-dev; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libxinerama-dev; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libxi-dev xsltproc; fi
 script:
   - make
   - make lint
@@ -20,8 +25,8 @@ jobs:
       install: *install
       script:
         - make release
-      env:
-        - GO111MODULE=on
+      os:
+        - ox
 stages:
   - "test"
   - "bundle"

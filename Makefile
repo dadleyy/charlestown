@@ -1,14 +1,22 @@
 NAME=charlestown
-DIST=./dist
-BIN_DIST=$(DIST)/charlestown/bin
-EXE=$(BIN_DIST)/$(NAME)
-VENDOR_MANIFEST=./vendor/modules.txt
-VENDOR_FLAGS=-v
-SRC=$(shell git ls-files | grep -e '\.go')
+
 GO=go
 GOOS=$(shell go env GOOS)
 GOARCH=$(shell go env GOARCH)
+
 RM=rm -rf
+COPY=cp -r
+MKDIR=mkdir -p
+
+DIST=./dist
+BIN_DIST=$(DIST)/charlestown/bin
+EXE=$(BIN_DIST)/$(NAME)
+
+VENDOR_MANIFEST=./vendor/modules.txt
+VENDOR_FLAGS=-v
+
+SRC=$(shell git ls-files | grep -e '\.go')
+
 VERSION=$(shell ./auto/git-version.sh)
 LDFLAGS="-s -w -X github.com/dadleyy/charlestown/engine/constants.AppVersion=$(VERSION)"
 BUILD_FLAGS=-x -v -ldflags $(LDFLAGS)
@@ -73,7 +81,7 @@ lint: $(SRC)
 
 test: $(SRC)
 	@echo "[charlestown] running tests"
-	mkdir -p $(basename $(COVERPROFILE))
+	$(MKDIR) $(basename $(COVERPROFILE))
 	touch $(COVERPROFILE)
 	$(GO) vet
 	$(GO) test $(TEST_FLAGS) ./...
@@ -84,18 +92,18 @@ $(EXE): $(SRC) $(VENDOR_MANIFEST)
 
 $(OSX_BUNDLE): $(EXE) $(OSX_PLIST_ARTIFACT) $(OSX_BUNDLE_ASSETS)
 	@echo "[charlestown] building osx bundle"
-	cp $(EXE) $(OSX_BUNDLE_CONTENTS)/MacOS/
-	cp -r $(dir $(OSX_BUNDLE_ASSETS))* "$(OSX_BUNDLE_CONTENTS)/Resources/"
+	$(COPY) $(EXE) $(OSX_BUNDLE_CONTENTS)/MacOS/
+	$(COPY) $(dir $(OSX_BUNDLE_ASSETS))* "$(OSX_BUNDLE_CONTENTS)/Resources/"
 	tar -cvzf $(OSX_TARBALL) -C ./dist/osx charlestown.app
 
 $(OSX_PLIST_ARTIFACT): $(OSX_PLIST_XSLT) $(OSX_PLIST_SOURCE)
 	@echo "[charlestown] building osx plist file"
-	mkdir -p $(OSX_BUNDLE_CONTENTS)
-	mkdir -p $(OSX_BUNDLE_CONTENTS)/MacOS
-	mkdir -p $(OSX_BUNDLE_CONTENTS)/Resources
+	$(MKDIR) $(OSX_BUNDLE_CONTENTS)
+	$(MKDIR) $(OSX_BUNDLE_CONTENTS)/MacOS
+	$(MKDIR) $(OSX_BUNDLE_CONTENTS)/Resources
 	xsltproc $(OSX_PLIST_FLAGS) -o $(OSX_PLIST_ARTIFACT) $(OSX_PLIST_XSLT) $(OSX_PLIST_SOURCE)
 
 $(TARBALL): $(EXE)
 	@echo "[charlestown] creating tarball"
-	mkdir -p $(dir $(TARBALL))
+	$(MKDIR) $(dir $(TARBALL))
 	tar -cvzf $(TARBALL) -C ./dist charlestown
