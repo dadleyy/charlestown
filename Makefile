@@ -1,4 +1,5 @@
 NAME=charlestown
+SRC=$(shell git ls-files | grep -e '\.go')
 
 GO=go
 GOOS=$(shell go env GOOS)
@@ -8,25 +9,28 @@ RM=rm -rf
 COPY=cp -r
 MKDIR=mkdir -p
 
+# structural settings
 DIST=./dist
 BIN_DIST=$(DIST)/charlestown/bin
 EXE=$(BIN_DIST)/$(NAME)
 
+# build settings
+LDFLAGS="-s -w -X github.com/dadleyy/charlestown/engine/constants.AppVersion=$(VERSION)"
+BUILD_FLAGS=-x -v -ldflags $(LDFLAGS)
 VENDOR_MANIFEST=./vendor/modules.txt
 VENDOR_FLAGS=-v
 
-SRC=$(shell git ls-files | grep -e '\.go')
-
+# artifact vars
 VERSION=$(shell ./auto/git-version.sh)
-LDFLAGS="-s -w -X github.com/dadleyy/charlestown/engine/constants.AppVersion=$(VERSION)"
-BUILD_FLAGS=-x -v -ldflags $(LDFLAGS)
 ARTIFACT_TAG=$(GOOS)-$(GOARCH)-$(VERSION)
+TARBALL=./dist/artifacts/charlestown-$(ARTIFACT_TAG).tar.gz
 
+# code quality settings
 CYCLO_FLAGS=-over 25
 COVERPROFILE=./dist/tests/cover.out
 TEST_FLAGS=-v -count=1 -cover -covermode=set -benchmem -coverprofile=$(COVERPROFILE)
-TARBALL=./dist/artifacts/charlestown-$(ARTIFACT_TAG).tar.gz
 
+# osx build settings
 OSX_DIST=$(DIST)/osx
 OSX_BUNDLE_CONTENTS=$(OSX_DIST)/charlestown.app/Contents
 OSX_BUNDLE=$(dir $(OSX_BUNDLE_CONTENTS))
@@ -38,17 +42,13 @@ OSX_PLIST_SOURCE=./auto/osx/plist-source.xml
 OSX_PLIST_XSLT=./auto/osx/plist-transform.xslt
 OSX_TARBALL=./dist/artifacts/charlestown-$(ARTIFACT_TAG).app.tar.gz
 
-.PHONY: all test clean osx artifact
+.PHONY: all test clean osx bundle cleanall lint
 
 all: $(EXE)
 
 osx: $(OSX_BUNDLE)
 
 bundle: $(TARBALL)
-
-files:
-	@echo $(SRC)
-	@echo $(OSX_BUNDLE_SRC)
 
 clean:
 	$(RM) $(dir $(EXE))
@@ -58,15 +58,10 @@ clean:
 	$(RM) $(TARBALL)
 	$(RM) $(OSX_TARBALL)
 
-cleanall:
+cleanall: clean
 	$(RM) $(DIST)
 
 release: $(TARBALL) $(OSX_BUNDLE)
-
-$(VENDOR_MANIFEST): go.mod go.sum
-	@echo "[charlestown] building vendor dir"
-	$(GO) mod tidy
-	$(GO) mod vendor $(VENDOR_FLAGS)
 
 lint: $(SRC)
 	@echo "[charlestown] getting lint tools"
@@ -88,17 +83,18 @@ test: $(SRC)
 	$(GO) vet
 	$(GO) test $(TEST_FLAGS) ./...
 
+# downloads vendor files using go modules.
+$(VENDOR_MANIFEST): go.mod go.sum
+	@echo "[charlestown] building vendor dir"
+	$(GO) mod tidy
+	$(GO) mod vendor $(VENDOR_FLAGS)
+
+# compiles the main binary.
 $(EXE): $(SRC) $(VENDOR_MANIFEST)
 	@echo "[charlestown] building"
 	$(GO) build -o $(EXE) $(BUILD_FLAGS)
 
-$(OSX_BUNDLE): $(EXE) $(OSX_PLIST_ARTIFACT) $(OSX_BUNDLE_ASSETS)
-	@echo "[charlestown] building osx bundle"
-	$(MKDIR) $(dir $(OSX_TARBALL))
-	$(COPY) $(EXE) $(OSX_BUNDLE_CONTENTS)/MacOS/
-	$(COPY) $(dir $(OSX_BUNDLE_ASSETS))* "$(OSX_BUNDLE_CONTENTS)/Resources/"
-	tar -cvzf $(OSX_TARBALL) -C ./dist/osx charlestown.app
-
+# compiles the osx Info.plist file that provides flavor.
 $(OSX_PLIST_ARTIFACT): $(OSX_PLIST_XSLT) $(OSX_PLIST_SOURCE)
 	@echo "[charlestown] building osx plist file"
 	$(MKDIR) $(OSX_BUNDLE_CONTENTS)
@@ -106,6 +102,15 @@ $(OSX_PLIST_ARTIFACT): $(OSX_PLIST_XSLT) $(OSX_PLIST_SOURCE)
 	$(MKDIR) $(OSX_BUNDLE_CONTENTS)/Resources
 	xsltproc $(OSX_PLIST_FLAGS) -o $(OSX_PLIST_ARTIFACT) $(OSX_PLIST_XSLT) $(OSX_PLIST_SOURCE)
 
+# compiles a tar.gz file of the osx application goodies.
+$(OSX_BUNDLE): $(EXE) $(OSX_PLIST_ARTIFACT) $(OSX_BUNDLE_ASSETS)
+	@echo "[charlestown] building osx bundle"
+	$(MKDIR) $(dir $(OSX_TARBALL))
+	$(COPY) $(EXE) $(OSX_BUNDLE_CONTENTS)/MacOS/
+	$(COPY) $(dir $(OSX_BUNDLE_ASSETS))* "$(OSX_BUNDLE_CONTENTS)/Resources/"
+	tar -cvzf $(OSX_TARBALL) -C ./dist/osx charlestown.app
+
+# compiles a tar.gz artifact of the binary.
 $(TARBALL): $(EXE)
 	@echo "[charlestown] creating tarball"
 	$(MKDIR) $(dir $(TARBALL))
