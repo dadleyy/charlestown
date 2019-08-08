@@ -22,16 +22,13 @@ func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objec
 	gl.UseProgram(program)
 	defer window.SwapBuffers()
 
-	cx, cy := game.Cursor.Location.Values()
+	// cx, cy := game.Cursor.Location.Values()
 	wx, wy := game.World.Values()
 	dx, dy := game.Dimensions.Values()
 
 	if dx == 0 || dy == 0 || wx == 0 || wy == 0 {
 		return nil
 	}
-
-	hry := float32(0.0)
-	hrx := float32(0.0)
 
 	// the ratio of our world to the viewport. If the world is wider, this will be > 1.0; smaller < 1.0.
 	ax := float32(wx) / float32(dx)
@@ -44,15 +41,10 @@ func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objec
 	py := (ay * 2.0)
 
 	// origin x
-	ox := -1.0 + float32(1.0/float32(dx))
-	oy := 1.0 - float32(1.0/float32(dy))
-
-	left := ox + hrx
-	right := ox + px + hrx
-	top := oy - hry
-	bottom := oy - py - hry
-
-	log.Printf("world (%d, %d) | viewport (%d, %d) | cursor (%d, %d) | bottom %.2f | right %.2f", wx, wy, dx, dy, cx, cy, bottom, right)
+	left := (0.0 - ax) + float32(1.0/float32(dx))
+	top := (0.0 + ay) - float32(1.0/float32(dy))
+	right := left + px
+	bottom := top - py
 
 	borders := []float32{
 		left, top, 0.0,
