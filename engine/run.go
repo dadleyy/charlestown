@@ -54,10 +54,10 @@ func Run(config Configuration) error {
 	log.SetOutput(io.MultiWriter(writer))
 	log.SetFlags(log.Ldate | log.Lshortfile | log.Ltime | log.LUTC)
 
-	world := objects.Dimensions{120, 40}
+	world := objects.Dimensions{400, 400}
 
 	cursor := objects.Cursor{
-		Location: objects.Point{1, 1},
+		Location: objects.Point{200, 200},
 	}
 
 	state := objects.Game{

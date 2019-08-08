@@ -22,58 +22,99 @@ func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objec
 	gl.UseProgram(program)
 	defer window.SwapBuffers()
 
-	x, y := game.Cursor.Location.Values()
-	width, height := game.World.Values()
+	cx, cy := game.Cursor.Location.Values()
+	wx, wy := game.World.Values()
 	dx, dy := game.Dimensions.Values()
 
-	if width == 0 || height == 0 {
+	if dx == 0 || dy == 0 || wx == 0 || wy == 0 {
 		return nil
 	}
 
-	mx := (1.0 / (float32(dx) / 600))
-	my := (1.0 / (float32(dy) / 400))
-	px := float32(x) / float32(width)
-	py := float32(y) / float32(height)
+	hry := float32(0.0)
+	hrx := float32(0.0)
 
-	// Draw the wall(s)
+	// the ratio of our world to the viewport. If the world is wider, this will be > 1.0; smaller < 1.0.
+	ax := float32(wx) / float32(dx)
+	// map the ratio to the [-1, 1] space
+	px := (ax * 2.0)
+
+	// the ratio of our world to the viewport. If the world is taller, this will be > 1.0; smaller < 1.0.
+	ay := float32(wy) / float32(dy)
+	// map the ratio to [-1, 1] space
+	py := (ay * 2.0)
+
+	// origin x
+	ox := -1.0 + float32(1.0/float32(dx))
+	oy := 1.0 - float32(1.0/float32(dy))
+
+	left := ox + hrx
+	right := ox + px + hrx
+	top := oy - hry
+	bottom := oy - py - hry
+
+	log.Printf("world (%d, %d) | viewport (%d, %d) | cursor (%d, %d) | bottom %.2f | right %.2f", wx, wy, dx, dy, cx, cy, bottom, right)
+
 	borders := []float32{
-		// top
-		-px, py, 0.0,
-		1.0 - px, py, 0.0,
+		left, top, 0.0,
+		right, top, 0.0,
 
-		// bottom
-		-px, py - 1.0, 0.0,
-		1.0 - px, py - 1.0, 0.0,
+		left, bottom, 0.0,
+		right, bottom, 0.0,
 
-		// left
-		-px, py, 0.0,
-		-px, py - 1.0, 0.0,
+		left, top, 0.0,
+		left, bottom, 0.0,
 
-		// right
-		1.0 - px, py, 0.0,
-		1.0 - px, py - 1.0, 0.0,
+		right, top, 0.0,
+		right, bottom, 0.0,
 	}
+
 	gl.BindVertexArray(engine.makeVao(borders))
 	gl.DrawArrays(gl.LINES, 0, int32(len(borders)/3))
+	/*
+			mx := (1.0 / (float32(dx) / 600))
+			my := (1.0 / (float32(dy) / 400))
+			px := float32(x) / float32(width)
+			py := float32(y) / float32(height)
 
-	cursorWidth := float32((0.05 * mx) * 0.5)
-	cursorHeight := float32((0.05 * my) * 0.5)
+			// Draw the wall(s)
+			borders := []float32{
+				// top
+				-px, py, 0.0,
+				1.0 - px, py, 0.0,
 
-	gl.BindVertexArray(engine.makeVao([]float32{
-		-cursorWidth, cursorHeight, 0.0,
-		-cursorWidth, -cursorHeight, 0.0,
-		cursorWidth, -cursorHeight, 0.0,
+				// bottom
+				-px, py - 1.0, 0.0,
+				1.0 - px, py - 1.0, 0.0,
 
-		-cursorWidth, cursorHeight, 0.0,
-		cursorWidth, cursorHeight, 0.0,
-		cursorWidth, -cursorHeight, 0.0,
-		/*
-			0.0, 0.0, 0.0,
-			0.0, 0.0, 0.0,
-			0.0, 0.0, 0.0,
-		*/
-	}))
-	gl.DrawArrays(gl.TRIANGLES, 0, 6)
+				// left
+				-px, py, 0.0,
+				-px, py - 1.0, 0.0,
+
+				// right
+				1.0 - px, py, 0.0,
+				1.0 - px, py - 1.0, 0.0,
+			}
+			gl.BindVertexArray(engine.makeVao(borders))
+			gl.DrawArrays(gl.LINES, 0, int32(len(borders)/3))
+
+			cursorWidth := float32((0.05 * mx) * 0.5)
+			cursorHeight := float32((0.05 * my) * 0.5)
+
+			gl.BindVertexArray(engine.makeVao([]float32{
+				-cursorWidth, cursorHeight, 0.0,
+				-cursorWidth, -cursorHeight, 0.0,
+				cursorWidth, -cursorHeight, 0.0,
+
+				-cursorWidth, cursorHeight, 0.0,
+				cursorWidth, cursorHeight, 0.0,
+				cursorWidth, -cursorHeight, 0.0,
+
+					0.0, 0.0, 0.0,
+					0.0, 0.0, 0.0,
+					0.0, 0.0, 0.0,
+			}))
+		gl.DrawArrays(gl.TRIANGLES, 0, 6)
+	*/
 
 	/*
 		triangle := []float32{
@@ -208,13 +249,13 @@ func (engine *openGLEngine) mutationForKey(key glfw.Key, action glfw.Action) mut
 	mut := mutations.Move(0, 0)
 	switch key {
 	case glfw.KeyW:
-		mut = mutations.Move(0, -1)
+		mut = mutations.Move(0, -10)
 	case glfw.KeyA:
-		mut = mutations.Move(-1, 0)
+		mut = mutations.Move(-10, 0)
 	case glfw.KeyS:
-		mut = mutations.Move(0, 1)
+		mut = mutations.Move(0, 10)
 	case glfw.KeyD:
-		mut = mutations.Move(1, 0)
+		mut = mutations.Move(10, 0)
 	case glfw.KeyTab:
 		if action == glfw.Press {
 			mut = mutations.Mode()
