@@ -17,39 +17,29 @@ type openGLEngine struct {
 	loader resources.Loader
 }
 
-func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objects.Game) error {
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	gl.UseProgram(program)
-	defer window.SwapBuffers()
+type box struct {
+	x      int
+	y      int
+	width  int
+	height int
+}
 
-	cx, cy := game.Cursor.Location.Values()
+func (engine *openGLEngine) box(b box, game objects.Game) (uint32, int32) {
 	wx, wy := game.World.Values()
 	dx, dy := game.Dimensions.Values()
+	rwx := float32(wx) / float32(dx)
+	rwy := float32(wy) / float32(dy)
 
-	if dx == 0 || dy == 0 || wx == 0 || wy == 0 {
-		return nil
-	}
+	rl := (float32(b.x) / float32(wx)) * rwx
+	rr := (float32(b.x+b.width) / float32(wx)) * rwx
 
-	rx := 0.5 - (float32(cx) / float32(wx))
-	ry := 0.5 - (float32(cy) / float32(wy))
+	tt := (float32(b.y) / float32(wy)) * rwy
+	bb := (float32(b.y+b.height) / float32(wy)) * rwy
 
-	log.Printf("cursor is (%0.2f x %0.2f) from all the way", rx, ry)
-
-	// the ratio of our world to the viewport. If the world is wider, this will be > 1.0; smaller < 1.0.
-	ax := float32(wx) / float32(dx)
-	// map the ratio to the [-1, 1] space
-	px := (ax * 2.0)
-
-	// the ratio of our world to the viewport. If the world is taller, this will be > 1.0; smaller < 1.0.
-	ay := float32(wy) / float32(dy)
-	// map the ratio to [-1, 1] space
-	py := (ay * 2.0)
-
-	// origin x
-	left := (0.0 - ax) + float32(1.0/float32(dx)) + rx
-	top := (0.0 + ay) - float32(1.0/float32(dy)) - ry
-	right := left + px
-	bottom := top - py
+	left := (rl * 2) - 1.0
+	right := (rr * 2) - 1.0
+	top := ((tt * 2.0) - 1.0) * -1.0
+	bottom := ((bb * 2.0) - 1.0) * -1.0
 
 	borders := []float32{
 		left, top, 0.0,
@@ -65,69 +55,32 @@ func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objec
 		right, bottom, 0.0,
 	}
 
-	gl.BindVertexArray(engine.makeVao(borders))
-	gl.DrawArrays(gl.LINES, 0, int32(len(borders)/3))
-	/*
-			mx := (1.0 / (float32(dx) / 600))
-			my := (1.0 / (float32(dy) / 400))
-			px := float32(x) / float32(width)
-			py := float32(y) / float32(height)
+	return engine.makeVao(borders), int32(len(borders) / 3)
+}
 
-			// Draw the wall(s)
-			borders := []float32{
-				// top
-				-px, py, 0.0,
-				1.0 - px, py, 0.0,
+func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objects.Game) error {
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	gl.UseProgram(program)
+	defer window.SwapBuffers()
 
-				// bottom
-				-px, py - 1.0, 0.0,
-				1.0 - px, py - 1.0, 0.0,
+	wx, wy := game.World.Values()
+	dx, dy := game.Dimensions.Values()
 
-				// left
-				-px, py, 0.0,
-				-px, py - 1.0, 0.0,
+	if dx == 0 || dy == 0 || wx == 0 || wy == 0 {
+		return nil
+	}
 
-				// right
-				1.0 - px, py, 0.0,
-				1.0 - px, py - 1.0, 0.0,
-			}
-			gl.BindVertexArray(engine.makeVao(borders))
-			gl.DrawArrays(gl.LINES, 0, int32(len(borders)/3))
+	world, size := engine.box(box{2, 2, wx - 5, wy - 5}, game)
+	gl.BindVertexArray(world)
+	gl.DrawArrays(gl.LINES, 0, size)
 
-			cursorWidth := float32((0.05 * mx) * 0.5)
-			cursorHeight := float32((0.05 * my) * 0.5)
+	cursor, size := engine.box(box{10, 5, 10, 10}, game)
+	gl.BindVertexArray(cursor)
+	gl.DrawArrays(gl.LINES, 0, size)
 
-			gl.BindVertexArray(engine.makeVao([]float32{
-				-cursorWidth, cursorHeight, 0.0,
-				-cursorWidth, -cursorHeight, 0.0,
-				cursorWidth, -cursorHeight, 0.0,
-
-				-cursorWidth, cursorHeight, 0.0,
-				cursorWidth, cursorHeight, 0.0,
-				cursorWidth, -cursorHeight, 0.0,
-
-					0.0, 0.0, 0.0,
-					0.0, 0.0, 0.0,
-					0.0, 0.0, 0.0,
-			}))
-		gl.DrawArrays(gl.TRIANGLES, 0, 6)
-	*/
-
-	/*
-		triangle := []float32{
-			-0.5 + px, 0.5 - py, 0,
-			-0.5 + px, -0.5 - py, 0,
-			0.5 + px, -0.5 - py, 0,
-
-			-0.5 + px, 0.5 - py, 0,
-			0.5 + px, 0.5 - py, 0,
-			0.5 + px, -0.5 - py, 0,
-		}
-
-		vao := engine.makeVao(triangle)
-		gl.BindVertexArray(vao)
-		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
-	*/
+	other, size := engine.box(box{10, 20, 10, 10}, game)
+	gl.BindVertexArray(other)
+	gl.DrawArrays(gl.LINES, 0, size)
 
 	return nil
 }
