@@ -6,14 +6,18 @@ VENDOR_MANIFEST=./vendor/modules.txt
 VENDOR_FLAGS=-v
 SRC=$(shell git ls-files | grep -e '\.go')
 GO=go
+GOOS=$(shell go env GOOS)
+GOARCH=$(shell go env GOARCH)
 RM=rm -rf
 VERSION=$(shell ./auto/git-version.sh)
 LDFLAGS="-s -w -X github.com/dadleyy/charlestown/engine/constants.AppVersion=$(VERSION)"
 BUILD_FLAGS=-x -v -ldflags $(LDFLAGS)
+ARTIFACT_TAG=$(GOOS)-$(GOARCH)-$(VERSION)
+
 CYCLO_FLAGS=-over 25
 COVERPROFILE=./dist/tests/cover.out
 TEST_FLAGS=-v -count=1 -cover -covermode=set -benchmem -coverprofile=$(COVERPROFILE)
-TARBALL=./dist/artifacts/charlestown-$(shell go env GOOS)-$(shell go env GOARCH)-$(VERSION).tar.gz
+TARBALL=./dist/artifacts/charlestown-$(ARTIFACT_TAG).tar.gz
 
 OSX_DIST=$(DIST)/osx
 OSX_BUNDLE_CONTENTS=$(OSX_DIST)/charlestown.app/Contents
@@ -24,7 +28,7 @@ OSX_PLIST_ARTIFACT=$(OSX_BUNDLE_CONTENTS)/Info.plist
 OSX_PLIST_FLAGS=--stringparam version $(VERSION)
 OSX_PLIST_SOURCE=./auto/osx/plist-source.xml
 OSX_PLIST_XSLT=./auto/osx/plist-transform.xslt
-OSX_TARBALL=./dist/artifacts/charlestown-$(shell go env GOOS)-$(shell go env GOARCH)-$(VERSION).app.tar.gz
+OSX_TARBALL=./dist/artifacts/charlestown-$(ARTIFACT_TAG).app.tar.gz
 
 .PHONY: all test clean osx artifact
 

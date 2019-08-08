@@ -3,8 +3,10 @@ language: go
 go:
   - "1.12"
 env:
-  - GOOS=linux GOARCH=amd64 GO111MODULE=on
-  - GOOS=darwin GOARCH=amd64 GO111MODULE=on
+  - GO111MODULE=on
+os:
+  - linux
+  - osx
 install: &install
   - sudo apt-get update
   - sudo apt-get install -y libgl1-mesa-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev xsltproc
@@ -17,18 +19,9 @@ jobs:
     - stage: "bundle"
       install: *install
       script:
-        - echo $GOOS
         - make release
-      deploy:
-        provider: s3
-        skip_cleanup: true
-        file: ./dist/artifacts/*.tar.gz
-        on:
-          all_branches: true
-          condition: $GOOS = darwin
       env:
         - GO111MODULE=on
-        - GOOS=darwin
 stages:
   - "test"
   - "bundle"

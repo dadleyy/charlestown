@@ -22,13 +22,18 @@ func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objec
 	gl.UseProgram(program)
 	defer window.SwapBuffers()
 
-	// cx, cy := game.Cursor.Location.Values()
+	cx, cy := game.Cursor.Location.Values()
 	wx, wy := game.World.Values()
 	dx, dy := game.Dimensions.Values()
 
 	if dx == 0 || dy == 0 || wx == 0 || wy == 0 {
 		return nil
 	}
+
+	rx := 0.5 - (float32(cx) / float32(wx))
+	ry := 0.5 - (float32(cy) / float32(wy))
+
+	log.Printf("cursor is (%0.2f x %0.2f) from all the way", rx, ry)
 
 	// the ratio of our world to the viewport. If the world is wider, this will be > 1.0; smaller < 1.0.
 	ax := float32(wx) / float32(dx)
@@ -41,8 +46,8 @@ func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objec
 	py := (ay * 2.0)
 
 	// origin x
-	left := (0.0 - ax) + float32(1.0/float32(dx))
-	top := (0.0 + ay) - float32(1.0/float32(dy))
+	left := (0.0 - ax) + float32(1.0/float32(dx)) + rx
+	top := (0.0 + ay) - float32(1.0/float32(dy)) - ry
 	right := left + px
 	bottom := top - py
 
