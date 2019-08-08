@@ -20,12 +20,30 @@ script:
   - make lint
   - make test
   - make bundle
+deploy:
+  provider: s3
+  access_key_id: "this-should-fail"
+  secret_access_key: "this-should-fail"
+  bucket: "charlestown"
+  skip_cleanup: true
+  file: ./dist/artifacts/*.tar.gz
+  on:
+    all_branches: true
 jobs:
   include:
     - stage: "bundle"
       install: *install
       script:
         - make osx
+      deploy:
+        provider: s3
+        access_key_id: "this-should-fail"
+        secret_access_key: "this-should-fail"
+        bucket: "charlestown"
+        skip_cleanup: true
+        file: ./dist/artifacts/*.tar.gz
+        on:
+          all_branches: true
       os:
         - osx
 stages:

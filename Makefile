@@ -13,6 +13,7 @@ MKDIR=mkdir -p
 DIST=./dist
 BIN_DIST=$(DIST)/charlestown/bin
 EXE=$(BIN_DIST)/$(NAME)
+ARTIFACT_DIST=$(DIST)/artifacts
 
 # build settings
 LDFLAGS="-s -w -X github.com/dadleyy/charlestown/engine/constants.AppVersion=$(VERSION)"
@@ -23,11 +24,11 @@ VENDOR_FLAGS=-v
 # artifact vars
 VERSION=$(shell ./auto/git-version.sh)
 ARTIFACT_TAG=$(GOOS)-$(GOARCH)-$(VERSION)
-TARBALL=./dist/artifacts/charlestown-$(ARTIFACT_TAG).tar.gz
+TARBALL=$(ARTIFACT_DIST)/charlestown-$(ARTIFACT_TAG).tar.gz
 
 # code quality settings
 CYCLO_FLAGS=-over 25
-COVERPROFILE=./dist/tests/cover.out
+COVERPROFILE=$(DIST)/tests/cover.out
 TEST_FLAGS=-v -count=1 -cover -covermode=set -benchmem -coverprofile=$(COVERPROFILE)
 
 # osx build settings
@@ -40,7 +41,7 @@ OSX_PLIST_ARTIFACT=$(OSX_BUNDLE_CONTENTS)/Info.plist
 OSX_PLIST_FLAGS=--stringparam version $(VERSION)
 OSX_PLIST_SOURCE=./auto/osx/plist-source.xml
 OSX_PLIST_XSLT=./auto/osx/plist-transform.xslt
-OSX_TARBALL=./dist/artifacts/charlestown-$(ARTIFACT_TAG).app.tar.gz
+OSX_TARBALL=$(ARTIFACT_DIST)/charlestown-$(ARTIFACT_TAG).app.tar.gz
 
 .PHONY: all test clean osx bundle cleanall lint
 
@@ -108,10 +109,10 @@ $(OSX_BUNDLE): $(EXE) $(OSX_PLIST_ARTIFACT) $(OSX_BUNDLE_ASSETS)
 	$(MKDIR) $(dir $(OSX_TARBALL))
 	$(COPY) $(EXE) $(OSX_BUNDLE_CONTENTS)/MacOS/
 	$(COPY) $(dir $(OSX_BUNDLE_ASSETS))* "$(OSX_BUNDLE_CONTENTS)/Resources/"
-	tar -cvzf $(OSX_TARBALL) -C ./dist/osx charlestown.app
+	tar -cvzf $(OSX_TARBALL) -C $(OSX_DIST) charlestown.app
 
 # compiles a tar.gz artifact of the binary.
 $(TARBALL): $(EXE)
 	@echo "[charlestown] creating tarball"
 	$(MKDIR) $(dir $(TARBALL))
-	tar -cvzf $(TARBALL) -C ./dist charlestown
+	tar -cvzf $(TARBALL) -C $(DIST) charlestown
