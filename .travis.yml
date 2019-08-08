@@ -10,10 +10,8 @@ os:
 before_install: &before_install
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update; fi
 install: &install
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libgl1-mesa-dev; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libxcursor-dev; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libxrandr-dev; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libxinerama-dev; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libgl1-mesa-dev libxcursor-dev; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libxrandr-dev libxinerama-dev; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y libxi-dev xsltproc; fi
 script:
   - make
@@ -26,7 +24,8 @@ deploy: &deploy
   secret_access_key: $AWS_SECRET_ACCESS_KEY
   bucket: $AWS_BUCKET
   skip_cleanup: true
-  file: ./dist/artifacts/*.tar.gz
+  local_dir: ./dist/artifacts
+  upload-dir: artifacts
   on:
     all_branches: true
 jobs:
