@@ -19,12 +19,13 @@ script:
   - make
   - make lint
   - make test
+  - make bundle
 jobs:
   include:
     - stage: "bundle"
       install: *install
       script:
-        - make release
+        - make osx
       os:
         - osx
 stages:

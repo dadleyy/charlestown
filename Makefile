@@ -44,6 +44,8 @@ all: $(EXE)
 
 osx: $(OSX_BUNDLE)
 
+bundle: $(TARBALL)
+
 files:
 	@echo $(SRC)
 	@echo $(OSX_BUNDLE_SRC)
@@ -92,6 +94,7 @@ $(EXE): $(SRC) $(VENDOR_MANIFEST)
 
 $(OSX_BUNDLE): $(EXE) $(OSX_PLIST_ARTIFACT) $(OSX_BUNDLE_ASSETS)
 	@echo "[charlestown] building osx bundle"
+	$(MKDIR) $(dir $(OSX_TARBALL))
 	$(COPY) $(EXE) $(OSX_BUNDLE_CONTENTS)/MacOS/
 	$(COPY) $(dir $(OSX_BUNDLE_ASSETS))* "$(OSX_BUNDLE_CONTENTS)/Resources/"
 	tar -cvzf $(OSX_TARBALL) -C ./dist/osx charlestown.app
