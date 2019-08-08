@@ -19,15 +19,15 @@ script:
   - make test
   - make bundle
 deploy: &deploy
-  provider: s3
-  access_key_id: $AWS_ACCESS_KEY_ID
-  secret_access_key: $AWS_SECRET_ACCESS_KEY
-  bucket: $AWS_BUCKET
-  skip_cleanup: true
-  local_dir: ./dist/artifacts
-  upload-dir: artifacts
-  on:
-    all_branches: true
+  - provider: s3
+    access_key_id: $AWS_ACCESS_KEY_ID
+    secret_access_key: $AWS_SECRET_ACCESS_KEY
+    bucket: $AWS_BUCKET
+    skip_cleanup: true
+    local_dir: ./dist/artifacts
+    upload-dir: artifacts
+    on:
+      all_branches: true
 jobs:
   include:
     - stage: "bundle"
