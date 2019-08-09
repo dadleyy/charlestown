@@ -27,19 +27,20 @@ type box struct {
 func (engine *openGLEngine) box(b box, game objects.Game) (uint32, int32) {
 	wx, wy := game.World.Values()
 	dx, dy := game.Dimensions.Values()
+	cx, cy := game.Cursor.Location.Values()
 	rwx := float32(wx) / float32(dx)
 	rwy := float32(wy) / float32(dy)
 
-	rl := (float32(b.x) / float32(wx)) * rwx
-	rr := (float32(b.x+b.width) / float32(wx)) * rwx
+	rl := (float32(b.x-cx) / float32(wx)) * rwx
+	rr := (float32(b.x+b.width-cx) / float32(wx)) * rwx
 
-	tt := (float32(b.y) / float32(wy)) * rwy
-	bb := (float32(b.y+b.height) / float32(wy)) * rwy
+	tt := (float32(b.y-cy) / float32(wy)) * rwy
+	bb := (float32(b.y+b.height-cy) / float32(wy)) * rwy
 
-	left := (rl * 2) - 1.0
-	right := (rr * 2) - 1.0
-	top := ((tt * 2.0) - 1.0) * -1.0
-	bottom := ((bb * 2.0) - 1.0) * -1.0
+	left := (rl * 2)
+	right := (rr * 2)
+	top := (tt * 2.0) * -1.0
+	bottom := (bb * 2.0) * -1.0
 
 	borders := []float32{
 		left, top, 0.0,
