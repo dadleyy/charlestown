@@ -79,7 +79,8 @@ func (engine *openGLEngine) draw(window *glfw.Window, program uint32, game objec
 	gl.BindVertexArray(cursor)
 	gl.DrawArrays(gl.LINES, 0, size)
 
-	other, size := engine.box(box{10, 20, 10, 10}, game)
+	cx, cy := game.Cursor.Location.Values()
+	other, size := engine.box(box{cx, cy, 10, 10}, game)
 	gl.BindVertexArray(other)
 	gl.DrawArrays(gl.LINES, 0, size)
 
