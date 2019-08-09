@@ -6,23 +6,21 @@
     <plist version="1.0">
       <dict>
         <key>CFBundleDisplayName</key>
-        <string>Charlestown</string>
-        <key>CFBundleDisplayName</key>
-        <string>Charlestown</string>
+        <string><xsl:value-of select="display-name" /></string>
         <key>CFBundleIdentifier</key>
-        <string>com.charlestown.terminal</string>
+        <string><xsl:value-of select="bundle-identifier" /></string>
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>CFBundleSignature</key>
         <string>cctw</string>
         <key>CFBundleExecutable</key>
-        <string>charlestown</string>
+        <string><xsl:value-of select="executable" /></string>
         <key>NSHighResolutionCapable</key>
         <true/>
         <key>CFBundleIconFile</key>
-        <string>charlestown-icon</string>
+        <string><xsl:value-of select="icon-file" /></string>
         <key>CFBundleVersion</key>
-        <string><xsl:value-of select="$version"/></string>
+        <string><xsl:value-of select="$version" /></string>
       </dict>
     </plist>
   </xsl:template>
